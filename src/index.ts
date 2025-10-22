@@ -1,4 +1,6 @@
 import express from "express";
+import http from "http";
+import { Server } from "socket.io";
 
 const app = express();
 
@@ -8,4 +10,14 @@ app.get("/", () => {
   console.log("Server is running");
 });
 
-export default app;
+const serverApp = http.createServer(app);
+
+const io = new Server(serverApp, {});
+
+io.on("connection", (socket) => {
+  // ...
+  console.log("Connection established");
+  console.log(socket);
+});
+
+export default serverApp;
