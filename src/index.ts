@@ -17,7 +17,12 @@ const io = new Server(serverApp, {});
 io.on("connection", (socket) => {
   // ...
   console.log("Connection established");
-  console.log(socket);
+  // console.log(socket);
+  socket.on("user_message", (message) => {
+    if (message) {
+      socket.emit("hello", "world");
+    }
+  });
 });
 
 export default serverApp;
