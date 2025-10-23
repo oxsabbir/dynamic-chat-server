@@ -1,4 +1,4 @@
-import serverApp from "./index";
+import serverApp from "./app";
 
 serverApp.listen(4000, () => {
   console.log("Server listening at port 4000");

@@ -4,7 +4,7 @@ import { Server } from "socket.io";
 
 // handling upcaughtException
 process.on("uncaughtException", (err) => {
-  console.log(err.message, err.message);
+  console.log("💥 Uncaught Exception:", err.name, err.message);
   process.exit(1);
 });
 
@@ -12,12 +12,16 @@ const app = express();
 
 app.use(express.json());
 
-app.get("/", () => {
+app.get("/", (req, res, next) => {
   console.log("Server is running");
+  res.send({
+    status: "success",
+    messsage: "server is up and running",
+  });
 });
 
 // sending response for undefined route
-app.all("*", (req, res, next) => {
+app.all("/{*splat}", (req, res, next) => {
   res.status(404).json({
     status: "not-found",
     message: `Cannot find ${req.originalUrl} on the server`,
@@ -29,7 +33,7 @@ app.use((err: any, req: Request, res: Response, next: NextFunction) => {
   console.log(err);
   res.status(err.statusCode || 403).json({
     status: "error",
-    message: err,
+    message: err.message,
   });
 });
 
