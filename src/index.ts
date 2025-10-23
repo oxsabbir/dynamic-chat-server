@@ -2,6 +2,12 @@ import express from "express";
 import http from "http";
 import { Server } from "socket.io";
 
+// handling upcaughtException
+process.on("uncaughtException", (err) => {
+  console.log(err.message, err.message);
+  process.exit(1);
+});
+
 const app = express();
 
 app.use(express.json());
