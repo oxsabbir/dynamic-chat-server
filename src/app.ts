@@ -13,7 +13,7 @@ process.on("uncaughtException", (err) => {
 });
 
 app.use(express.json());
-app.get("/", (req, res, next) => {
+app.get("/", (_, res: Response) => {
   console.log("Server is running");
   res.send({
     status: "success",
