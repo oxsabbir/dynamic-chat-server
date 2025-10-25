@@ -27,3 +27,16 @@ export interface Message extends Document {
   sendTo: "dm" | "group";
   createdAt: Date;
 }
+
+export interface FriendShip extends Document {
+  sender: ObjectId;
+  receiver: ObjectId;
+  status: "pending" | "accepted";
+  createdAt: Date;
+}
+
+export interface Blocking extends Document {
+  blocker: ObjectId;
+  blocked: ObjectId;
+  createdAt: Date;
+}
