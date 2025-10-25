@@ -7,4 +7,6 @@ export const signUp = catchAsync(async function (
   req: Request,
   res: Response,
   next: NextFunction
-) {});
+) {
+  const {} = req;
+});
