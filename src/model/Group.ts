@@ -18,6 +18,10 @@ const groupSchema = new Schema<Group>({
     type: mongoose.SchemaTypes.ObjectId,
     required: true,
   },
+  createdAt: {
+    type: Date,
+    default: Date.now(),
+  },
 });
 
 const Group = model("Group", groupSchema);

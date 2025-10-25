@@ -18,3 +18,12 @@ export interface Group extends Document {
   admin: ObjectId;
   createdAt: Date;
 }
+
+export interface Message extends Document {
+  sender: ObjectId;
+  receiver: ObjectId;
+  status: "sent" | "seen";
+  type: "text" | "mixed";
+  sendTo: "dm" | "group";
+  createdAt: Date;
+}
