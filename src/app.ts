@@ -5,6 +5,7 @@ import express, { NextFunction, Response, Request } from "express";
 import authRouther from "./routes/auth-router";
 
 const app = express();
+app.use(express.json());
 
 // handling upcaughtException
 process.on("uncaughtException", (err) => {
@@ -12,7 +13,6 @@ process.on("uncaughtException", (err) => {
   process.exit(1);
 });
 
-app.use(express.json());
 app.get("/", (_, res: Response) => {
   console.log("Server is running");
   res.send({
