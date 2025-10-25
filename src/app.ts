@@ -1,6 +1,10 @@
-import express, { NextFunction, Response, Request } from "express";
 import http from "http";
 import { Server } from "socket.io";
+import express, { NextFunction, Response, Request } from "express";
+
+import authRouther from "./routes/auth-router";
+
+const app = express();
 
 // handling upcaughtException
 process.on("uncaughtException", (err) => {
@@ -8,10 +12,7 @@ process.on("uncaughtException", (err) => {
   process.exit(1);
 });
 
-const app = express();
-
 app.use(express.json());
-
 app.get("/", (req, res, next) => {
   console.log("Server is running");
   res.send({
@@ -19,6 +20,9 @@ app.get("/", (req, res, next) => {
     messsage: "server is up and running",
   });
 });
+
+// defining routes
+app.use("/api/v1", authRouther);
 
 // sending response for undefined route
 app.all("/{*splat}", (req, res, next) => {
