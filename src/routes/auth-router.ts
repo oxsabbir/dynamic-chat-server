@@ -1,10 +1,10 @@
 import { Router } from "express";
-import { signUp } from "../controller/auth-controller";
+import { signUp, login } from "../controller/auth-controller";
 
 const authRouther = Router();
 
 authRouther.post("/sign-up", signUp);
-// authRouther.post("/login");
+authRouther.post("/login", login);
 // authRouther.post("/forgot-password");
 // authRouther.post("/update-password");
 // authRouther.post("/update-profile");

@@ -61,7 +61,26 @@ export const login = catchAsync(async function (
     userData &&
     userData.comparePassword(validInput.password, userData.password);
 
-  console.log(isCorrect);
+  if (!isCorrect)
+    return next({
+      statusCode: 401,
+      message: "incorrect password, please try again",
+    });
+
+  const plainUser = {
+    userId: userData._id,
+    fullName: userData.fullName,
+    email: userData.email,
+  };
+
+  const token = generateJwtToken(plainUser);
+
+  res.status(200).json({
+    status: "success",
+    message: "user login successful",
+    token,
+    data: plainUser,
+  });
 });
 
 export const routeProtect = catchAsync(async function (
