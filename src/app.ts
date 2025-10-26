@@ -34,6 +34,7 @@ app.all("/{*splat}", (req, res, next) => {
 
 // global error handling middleware
 app.use((err: any, req: Request, res: Response, next: NextFunction) => {
+  console.log(err);
   res.status(err.statusCode || 403).json({
     status: "error",
     message: err.message,

@@ -13,11 +13,20 @@ export const signUp = catchAsync(async function (
   const validInput = await validate(userSchema, req.body, res, next);
   if (!validInput) return;
 
+  const userExist = await User.findOne({ email: validInput.email });
+  if (userExist)
+    return next({
+      statusCode: 400,
+      message: "user already exist with this email",
+    });
+
+  const userData = await User.create(validInput);
+
   res.status(201).json({
     status: "success",
     message: "User created",
     data: {
-      ...validInput,
+      ...userData.toJSON(),
     },
   });
 });

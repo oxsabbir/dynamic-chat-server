@@ -1,5 +1,6 @@
 import { Schema, model } from "mongoose";
 import { User } from "../types";
+import * as bcryptjs from "bcryptjs";
 
 const userSchema = new Schema<User>({
   fullName: {
@@ -27,6 +28,19 @@ const userSchema = new Schema<User>({
     type: Date,
     default: Date.now(),
   },
+});
+
+userSchema.pre("save", async function (next) {
+  // checking for password
+  if (!this.password) next();
+
+  // checking if the user is fresh new user
+  if (!this.isModified()) return next();
+
+  // finally hashing the password and saving it
+  this.password = await bcryptjs.hash(this.password, 12);
+
+  next();
 });
 
 const User = model("User", userSchema);
