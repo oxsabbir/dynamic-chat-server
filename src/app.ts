@@ -5,6 +5,7 @@ import { routeProtect } from "./controller/auth-controller";
 
 import authRouther from "./routes/auth-router";
 import friendshipRouter from "./routes/friendship-router";
+import userRouter from "./routes/user-router";
 
 const app = express();
 app.use(express.json());
@@ -25,6 +26,7 @@ app.get("/", (_, res: Response) => {
 
 // defining routes
 app.use("/api/v1", authRouther);
+app.use("/api/v1/user", routeProtect, userRouter);
 app.use("/api/v1/friendship", routeProtect, friendshipRouter);
 
 // sending response for undefined route

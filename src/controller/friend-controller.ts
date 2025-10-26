@@ -9,9 +9,15 @@ export const getAllFriendRequest = catchAsync(async function (
   res: Response,
   next: NextFunction
 ) {
-  const requestList = await Friendship.find();
+  const selfId = (req as CustomRequest).user.id;
+
+  const requestList = await Friendship.find({
+    receiver: selfId,
+    status: "pending",
+  });
   res.status(200).json({
     status: "success",
+    message: "successfully retrive friend request",
     data: {
       requests: requestList,
     },
