@@ -1,4 +1,5 @@
 import { Document, ObjectId } from "mongoose";
+import { Request } from "express";
 
 export interface User extends Document {
   fullName: string;
@@ -43,4 +44,8 @@ export interface Blocking extends Document {
   blocker: ObjectId;
   blocked: ObjectId;
   createdAt: Date;
+}
+
+export interface CustomRequest extends Request {
+  user: Partial<User>;
 }

@@ -13,6 +13,7 @@ const friendShipSchema = new Schema<FriendShip>({
   status: {
     type: String,
     enum: ["pending", "accepted"],
+    default: "pending",
   },
   createdAt: {
     type: Date,
