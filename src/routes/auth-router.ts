@@ -1,5 +1,10 @@
 import { Router } from "express";
-import { signUp, login } from "../controller/auth-controller";
+import {
+  signUp,
+  login,
+  getMe,
+  routeProtect,
+} from "../controller/auth-controller";
 
 const authRouther = Router();
 
@@ -8,7 +13,7 @@ authRouther.post("/login", login);
 // authRouther.post("/forgot-password");
 // authRouther.post("/update-password");
 // authRouther.post("/update-profile");
-// authRouther.get("/me");
+authRouther.get("/me", routeProtect, getMe);
 // authRouther.post("/sign-up-with-google");
 
 export default authRouther;

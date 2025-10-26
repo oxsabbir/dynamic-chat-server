@@ -3,8 +3,9 @@ import User from "../model/User";
 import catchAsync from "../utils/catch-async";
 import validate from "../helpers/validate";
 import { userSchema, loginSchema } from "../schema/user-schema";
-import generateJwtToken from "../helpers/genrateJwtToken";
-import { verifyJwtSignature } from "../helpers/jwt-helper";
+
+import { verifyJwtSignature, generateJwtToken } from "../helpers/jwt-helper";
+import { User as UserType } from "../types";
 
 export const signUp = catchAsync(async function (
   req: Request,
@@ -83,8 +84,42 @@ export const login = catchAsync(async function (
   });
 });
 
+export const getMe = catchAsync(async function (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  console.log("hi");
+  next();
+});
+
+interface CustomRequest extends Request {
+  user: Partial<UserType>;
+}
+
 export const routeProtect = catchAsync(async function (
   req: Request,
   res: Response,
   next: NextFunction
-) {});
+) {
+  const errorResponse = {
+    statusCode: 401,
+    message: "please login to get full access",
+  };
+  // getting the token from requeset headers
+  const token = req.headers.authorization?.split(" ")[1];
+  if (!token) return next(errorResponse);
+
+  const decode = verifyJwtSignature(token);
+
+  if (!decode?.email) return next(errorResponse);
+
+  // see user exist
+  const userData = await User.findOne({ email: decode.email }).select(
+    "-password -passwordChangedAt"
+  );
+
+  (req as CustomRequest).user = userData || {};
+
+  next();
+});
