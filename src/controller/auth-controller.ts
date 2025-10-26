@@ -1,5 +1,4 @@
 import { Request, Response, NextFunction } from "express";
-import jwt from "jsonwebtoken";
 import User from "../model/User";
 import catchAsync from "../utils/catch-async";
 import validate from "../helpers/validate";
@@ -10,7 +9,9 @@ export const signUp = catchAsync(async function (
   res: Response,
   next: NextFunction
 ) {
+  // valdating user input
   const validInput = await validate(userSchema, req.body, res, next);
+  if (!validInput) return;
 
   res.status(201).json({
     status: "success",

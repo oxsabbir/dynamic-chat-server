@@ -13,15 +13,17 @@ export default async function validate<T extends z.ZodSchema>(
     return parsed;
   } catch (error) {
     if (error instanceof ZodError) {
-      return res.status(400).json({
+      res.status(400).json({
         status: "validation-error",
         errors: error.issues.map((err) => ({
           path: err.path.join("."),
           message: err.message,
         })),
       });
+      return undefined;
     }
     // unexpected error → forward to global handler
     next(error);
+    return undefined;
   }
 }

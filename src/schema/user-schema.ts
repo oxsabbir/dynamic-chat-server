@@ -7,4 +7,4 @@ export const userSchema = zod.object({
   password: zod.string("password is required"),
 });
 
-export type User = zod.infer<typeof userSchema>;
+export type UserInput = zod.infer<typeof userSchema>;
