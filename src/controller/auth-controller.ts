@@ -7,6 +7,10 @@ import { userSchema, loginSchema } from "../schema/user-schema";
 import { verifyJwtSignature, generateJwtToken } from "../helpers/jwt-helper";
 import { User as UserType } from "../types";
 
+interface CustomRequest extends Request {
+  user: Partial<UserType>;
+}
+
 export const signUp = catchAsync(async function (
   req: Request,
   res: Response,
@@ -89,13 +93,14 @@ export const getMe = catchAsync(async function (
   res: Response,
   next: NextFunction
 ) {
-  console.log("hi");
-  next();
+  const user = (req as CustomRequest).user;
+  res.status(200).json({
+    status: "success",
+    data: {
+      user,
+    },
+  });
 });
-
-interface CustomRequest extends Request {
-  user: Partial<UserType>;
-}
 
 export const routeProtect = catchAsync(async function (
   req: Request,
