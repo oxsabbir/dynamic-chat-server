@@ -8,6 +8,10 @@ export interface User extends Document {
   resetTokenExpiry: Date;
   refreshToken?: string;
   passwordChangedAt?: string;
+  comparePassword: (
+    plainPassword: string,
+    hashedPassword: string
+  ) => Promise<boolean>;
   createdAt: Date;
 }
 

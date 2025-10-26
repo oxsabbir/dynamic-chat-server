@@ -30,6 +30,13 @@ const userSchema = new Schema<User>({
   },
 });
 
+userSchema.methods.comparePassword = async function (
+  plainPassword: string,
+  hashedPassword: string
+) {
+  return bcryptjs.compare(plainPassword, hashedPassword);
+};
+
 userSchema.pre("save", async function (next) {
   // checking for password
   if (!this.password) next();
