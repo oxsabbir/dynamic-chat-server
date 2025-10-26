@@ -35,6 +35,12 @@ export const sentFriendRequest = catchAsync(async function (
 
   const selfId = (req as CustomRequest).user.id;
 
+  if (userId === selfId)
+    return next({
+      statusCode: 400,
+      message: "you can't sent request to yourself",
+    });
+
   // check if request is pending
   const isPending = await Friendship.exists({
     sender: selfId,
