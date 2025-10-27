@@ -1,5 +1,4 @@
 import { NextFunction, Request, Response } from "express";
-import User from "../model/User";
 import Friendship from "../model/Friendship";
 import catchAsync from "../utils/catch-async";
 import { CustomRequest } from "../types";
@@ -40,6 +39,52 @@ export const getAllFriends = catchAsync(async function (
     message: "successfully retirve friend",
     data: {
       friend: friendsList,
+    },
+  });
+});
+
+export const acceptFriendRequest = catchAsync(async function (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  // get the id of user to accept request
+  const userId = req.params.id;
+  const selfId = (req as CustomRequest).user.id;
+  if (!userId)
+    return next({
+      statusCode: 400,
+      message: "please provide user-id to accept request",
+    });
+  // check if theres any pending request for me from that user
+  const pendingRequest = await Friendship.findOne({
+    status: "pending",
+    receiver: selfId,
+    sender: userId,
+  });
+  if (!pendingRequest)
+    return next({
+      statusCode: 404,
+      message: "no friend request found with the user-id",
+    });
+
+  // finally accepty request by changing the status
+  const acceptedFriend = await Friendship.findByIdAndUpdate(pendingRequest.id, {
+    status: "accepted",
+  });
+
+  if (!acceptFriendRequest)
+    return next({
+      statusCode: 405,
+      message: "something went wrong, can't accept request",
+    });
+
+  // send response
+  res.status(201).json({
+    status: "success",
+    message: "friend request accepted successfully",
+    data: {
+      friend: acceptedFriend,
     },
   });
 });
