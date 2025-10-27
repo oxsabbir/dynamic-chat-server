@@ -24,6 +24,26 @@ export const getAllFriendRequest = catchAsync(async function (
   });
 });
 
+export const getAllFriends = catchAsync(async function (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  const selfId = (req as CustomRequest).user.id;
+  const friendsList = await Friendship.find({
+    status: "accepted",
+    $or: [{ sender: selfId }, { receiver: selfId }],
+  });
+
+  res.status(200).json({
+    status: "success",
+    message: "successfully retirve friend",
+    data: {
+      friend: friendsList,
+    },
+  });
+});
+
 export const sentFriendRequest = catchAsync(async function (
   req: Request,
   res: Response,
