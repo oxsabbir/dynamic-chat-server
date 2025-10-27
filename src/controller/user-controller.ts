@@ -7,7 +7,7 @@ export const getAllUser = catchAsync(async function (
   res: Response,
   next: NextFunction
 ) {
-  const allUser = await User.find();
+  const allUser = await User.find().select("-password -passwordChangedAt -__v");
   res.status(200).json({
     status: "success",
     message: "successfully retrive users",

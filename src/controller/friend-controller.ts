@@ -106,6 +106,15 @@ export const sentFriendRequest = catchAsync(async function (
       message: "you can't sent request to yourself",
     });
 
+  // check if already a friend
+  const isFriend = await Friendship.exists({
+    $or: [{ sender: userId, receiver: userId }],
+    status: "accepted",
+  });
+
+  if (isFriend)
+    return next({ statusCode: 400, message: "provided user already a friend" });
+
   // check if request is pending
   const isPending = await Friendship.exists({
     sender: selfId,
