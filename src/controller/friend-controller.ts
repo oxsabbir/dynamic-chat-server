@@ -108,7 +108,11 @@ export const sentFriendRequest = catchAsync(async function (
 
   // check if already a friend
   const isFriend = await Friendship.exists({
-    $or: [{ sender: userId, receiver: userId }],
+    $and: [
+      { $or: [{ sender: userId }, { sender: selfId }] },
+      { $or: [{ receiver: userId }, { receiver: selfId }] },
+    ],
+
     status: "accepted",
   });
 
