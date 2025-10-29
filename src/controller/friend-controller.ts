@@ -4,6 +4,7 @@ import catchAsync from "../utils/catch-async";
 import { CustomRequest } from "../types";
 import mongoose from "mongoose";
 import { errorMessage } from "../utils/send-response";
+import User from "../model/User";
 
 export const getAllFriendRequest = catchAsync(async function (
   req: Request,
@@ -240,14 +241,14 @@ export const removeFriend = catchAsync(async function (
   res: Response,
   next: NextFunction
 ) {
-  const friendId = req.params.id;
-  if (!friendId)
+  const friendShipId = req.params.id;
+  if (!friendShipId)
     return next(
       errorMessage(404, "friend-id not found to procced unfriend request")
     );
 
   const deletedFriend = await Friendship.findByIdAndUpdate(
-    friendId,
+    friendShipId,
     {
       status: "deleted",
     },
@@ -256,27 +257,44 @@ export const removeFriend = catchAsync(async function (
 
   res.status(204).json({
     status: "success",
-    message: "friend removed successfully",
+    message: "Friend removed successfully",
     data: {
       friend: deletedFriend,
     },
   });
 });
 
-export const blockFriend = catchAsync(async function (
-  req: Request,
-  res: Response,
-  next: NextFunction
-) {
-  // get friend id
-  // add it to blocked list
-  const friend = {};
-  // send response
-  res.status(200).json({
-    status: "success",
-    message: "successfully blocked this friend",
-    data: {
-      friend,
-    },
+export const manageBlocking = function (actionType: "block" | "unblock") {
+  return catchAsync(async function (
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ) {
+    // get friend id
+    const friendId = req.params.id;
+    const selfId = (req as CustomRequest).user.id;
+
+    const blockAction =
+      actionType === "block"
+        ? {
+            $addToSet: { blocked: friendId },
+          }
+        : {
+            $pull: { blocked: friendId },
+          };
+
+    // add it to blocked list
+    const user = await User.findByIdAndUpdate(selfId, blockAction, {
+      new: true,
+    }).select("-password -__v -passwordChangedAt");
+
+    // send response
+    res.status(200).json({
+      status: "success",
+      message: `Friend ${actionType === "block" ? "blocked" : "unblocked"} successfully`,
+      data: {
+        user,
+      },
+    });
   });
-});
+};

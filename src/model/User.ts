@@ -26,6 +26,7 @@ const userSchema = new Schema<User>(
       {
         type: mongoose.SchemaTypes.ObjectId,
         ref: "User",
+        default: [],
       },
     ],
     accessToken: {
