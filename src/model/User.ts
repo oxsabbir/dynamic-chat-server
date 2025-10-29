@@ -21,6 +21,9 @@ const userSchema = new Schema<User>({
   resetTokenExpiry: {
     type: Date,
   },
+  accessToken: {
+    type: String,
+  },
   refreshToken: {
     type: String,
   },

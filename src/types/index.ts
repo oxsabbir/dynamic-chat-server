@@ -8,6 +8,7 @@ export interface User extends Document {
   resetToken?: string;
   resetTokenExpiry: Date;
   refreshToken?: string;
+  accessToken?: string;
   passwordChangedAt?: string;
   comparePassword: (
     plainPassword: string,

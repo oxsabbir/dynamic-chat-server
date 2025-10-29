@@ -2,6 +2,7 @@ import { NextFunction, Request, Response } from "express";
 import Friendship from "../model/Friendship";
 import catchAsync from "../utils/catch-async";
 import { CustomRequest } from "../types";
+import mongoose from "mongoose";
 
 export const getAllFriendRequest = catchAsync(async function (
   req: Request,
@@ -13,7 +14,9 @@ export const getAllFriendRequest = catchAsync(async function (
   const requestList = await Friendship.find({
     receiver: selfId,
     status: "pending",
-  });
+  })
+    .populate("sender", "fullName email", "User")
+    .select("-receiver");
   res.status(200).json({
     status: "success",
     message: "successfully retrive friend request",
@@ -28,11 +31,52 @@ export const getAllFriends = catchAsync(async function (
   res: Response,
   next: NextFunction
 ) {
-  const selfId = (req as CustomRequest).user.id;
-  const friendsList = await Friendship.find({
-    status: "accepted",
-    $or: [{ sender: selfId }, { receiver: selfId }],
-  });
+  // turing string id to mongoose objectId
+  const selfId = new mongoose.Types.ObjectId(
+    (req as CustomRequest).user.id as string
+  );
+
+  const friendsList = await Friendship.aggregate([
+    {
+      $match: {
+        status: "accepted",
+        $or: [{ sender: selfId }, { receiver: selfId }],
+      },
+    },
+    {
+      $addFields: {
+        friendId: {
+          $cond: {
+            if: { $eq: ["$sender", selfId] },
+            then: "$receiver",
+            else: "$sender",
+          },
+        },
+      },
+    },
+    {
+      $lookup: {
+        localField: "friendId",
+        foreignField: "_id",
+        from: "users",
+        as: "friendInfo",
+      },
+    },
+    {
+      $unset: [
+        "friendInfo.password",
+        "friendInfo.passwordChangedAt",
+        "friendInfo.resetToken",
+        "friendInfo.accessToken",
+        "friendInfo.refreshToken",
+      ],
+    },
+    {
+      $unwind: { path: "$friendInfo", preserveNullAndEmptyArrays: true },
+    },
+  ]);
+
+  console.log(friendsList, selfId);
 
   res.status(200).json({
     status: "success",
