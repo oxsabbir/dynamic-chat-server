@@ -1,37 +1,46 @@
-import { Schema, model } from "mongoose";
+import mongoose, { Schema, model } from "mongoose";
 import { User } from "../types";
 import * as bcryptjs from "bcryptjs";
 
-const userSchema = new Schema<User>({
-  fullName: {
-    type: String,
-    require: [true, "fullname is required"],
+const userSchema = new Schema<User>(
+  {
+    fullName: {
+      type: String,
+      require: [true, "fullname is required"],
+    },
+    email: {
+      type: String,
+      required: [true, "email address is required"],
+    },
+    password: {
+      type: String,
+      required: [true, "password is required"],
+    },
+    resetToken: {
+      type: String,
+    },
+    resetTokenExpiry: {
+      type: Date,
+    },
+    blocked: [
+      {
+        type: mongoose.SchemaTypes.ObjectId,
+        ref: "User",
+      },
+    ],
+    accessToken: {
+      type: String,
+    },
+    refreshToken: {
+      type: String,
+    },
+    createdAt: {
+      type: Date,
+      default: Date.now(),
+    },
   },
-  email: {
-    type: String,
-    required: [true, "email address is required"],
-  },
-  password: {
-    type: String,
-    required: [true, "password is required"],
-  },
-  resetToken: {
-    type: String,
-  },
-  resetTokenExpiry: {
-    type: Date,
-  },
-  accessToken: {
-    type: String,
-  },
-  refreshToken: {
-    type: String,
-  },
-  createdAt: {
-    type: Date,
-    default: Date.now(),
-  },
-});
+  { toObject: { virtuals: true }, toJSON: { virtuals: true } }
+);
 
 userSchema.methods.comparePassword = async function (
   plainPassword: string,

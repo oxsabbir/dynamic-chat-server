@@ -12,10 +12,12 @@ const groupSchema = new Schema<Group>({
   members: [
     {
       type: mongoose.SchemaTypes.ObjectId,
+      ref: "User",
     },
   ],
   admin: {
     type: mongoose.SchemaTypes.ObjectId,
+    ref: "User",
     required: true,
   },
   createdAt: {

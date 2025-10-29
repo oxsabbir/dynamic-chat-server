@@ -4,11 +4,13 @@ import { FriendShip } from "../types";
 const friendShipSchema = new Schema<FriendShip>({
   sender: {
     type: mongoose.SchemaTypes.ObjectId,
+    ref: "User",
     required: true,
   },
   receiver: {
     type: mongoose.SchemaTypes.ObjectId,
     required: true,
+    ref: "User",
   },
   status: {
     type: String,

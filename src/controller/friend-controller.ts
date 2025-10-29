@@ -239,10 +239,26 @@ export const removeFriend = catchAsync(async function (
   res: Response,
   next: NextFunction
 ) {
-  console.log("Hi");
-
   res.status(204).json({
     status: "success",
     message: "friend removed successfully",
+  });
+});
+
+export const blockFriend = catchAsync(async function (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  // get friend id
+  // add it to blocked list
+  const friend = {};
+  // send response
+  res.status(200).json({
+    status: "success",
+    message: "successfully blocked this friend",
+    data: {
+      friend,
+    },
   });
 });

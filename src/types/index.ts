@@ -10,6 +10,7 @@ export interface User extends Document {
   refreshToken?: string;
   accessToken?: string;
   passwordChangedAt?: string;
+  blocked: ObjectId[];
   comparePassword: (
     plainPassword: string,
     hashedPassword: string
