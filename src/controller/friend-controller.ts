@@ -264,6 +264,26 @@ export const removeFriend = catchAsync(async function (
   });
 });
 
+export const getBlockedUserList = catchAsync(async function (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  const selfId = (req as CustomRequest).user.id;
+
+  const blockedList = await User.findById(selfId).populate({
+    path: "blocked",
+    select: "-blocked -password -passwordChangedAt",
+  });
+  res.status(200).json({
+    status: "success",
+    message: "Successfully retrieved blocked users",
+    data: {
+      blocked: blockedList?.blocked || [],
+    },
+  });
+});
+
 export const manageBlocking = function (actionType: "block" | "unblock") {
   return catchAsync(async function (
     req: Request,
