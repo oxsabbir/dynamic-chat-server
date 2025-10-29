@@ -43,6 +43,7 @@ app.get("/", (_, res: Response) => {
 // defining routes
 app.use("/api/v1", authRouther);
 app.use("/api/v1/user", routeProtect, userRouter);
+app.use("/api/v1/group", routeProtect, groupRouter);
 app.use("/api/v1/friendship", routeProtect, friendshipRouter);
 
 // sending response for undefined route
