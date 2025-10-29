@@ -36,7 +36,7 @@ export const getAllFriends = catchAsync(async function (
     (req as CustomRequest).user.id as string
   );
 
-  const perPage = 2;
+  const perPage = Number(req.query.limit || 10);
   const page = Number(req.query.page || 1);
 
   const totalFriends = await Friendship.find({
@@ -120,29 +120,25 @@ export const acceptFriendRequest = catchAsync(async function (
   next: NextFunction
 ) {
   // get the id of user to accept request
+
+  const friendShipId = req.params.id;
+
   const userId = req.params.id;
-  const selfId = (req as CustomRequest).user.id;
   if (!userId)
     return next({
       statusCode: 400,
-      message: "please provide user-id to accept request",
+      message: "please provide valid friendship to accept request",
     });
   // check if theres any pending request for me from that user
-  const pendingRequest = await Friendship.findOne({
-    status: "pending",
-    receiver: selfId,
-    sender: userId,
-  });
-  if (!pendingRequest)
-    return next({
-      statusCode: 404,
-      message: "no friend request found with the user-id",
-    });
 
   // finally accepty request by changing the status
-  const acceptedFriend = await Friendship.findByIdAndUpdate(pendingRequest.id, {
-    status: "accepted",
-  });
+  const acceptedFriend = await Friendship.findByIdAndUpdate(
+    friendShipId,
+    {
+      status: "accepted",
+    },
+    { new: true }
+  );
 
   if (!acceptFriendRequest)
     return next({
@@ -212,5 +208,41 @@ export const sentFriendRequest = catchAsync(async function (
     data: {
       request: friendship,
     },
+  });
+});
+
+export const cancelFriendRequest = catchAsync(async function (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  // getting friendship  to reject request
+  const friendShipId = req.params.id;
+  const cancelledFriend = await Friendship.findByIdAndDelete(friendShipId);
+  if (!cancelledFriend)
+    return next({
+      statusCode: 404,
+      message: "no friend request found with provided id",
+    });
+
+  res.status(201).json({
+    status: "success",
+    message: "friend request cancelled successfully",
+    data: {
+      request: cancelledFriend,
+    },
+  });
+});
+
+export const removeFriend = catchAsync(async function (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  console.log("Hi");
+
+  res.status(204).json({
+    status: "success",
+    message: "friend removed successfully",
   });
 });
