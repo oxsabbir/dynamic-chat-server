@@ -1,4 +1,5 @@
 import http from "http";
+import morgan from "morgan";
 import { Server } from "socket.io";
 import express, { NextFunction, Response, Request } from "express";
 import { routeProtect } from "./controller/auth-controller";
@@ -9,6 +10,18 @@ import userRouter from "./routes/user-router";
 
 const app = express();
 app.use(express.json());
+
+app.use(
+  morgan((tokens, req, res) => {
+    return [
+      tokens.method(req, res), // GET / POST
+      tokens.url(req, res), // /friends
+      tokens.status(req, res), // 200
+      tokens["response-time"](req, res),
+      "ms",
+    ].join(" | ");
+  })
+);
 
 // handling upcaughtException
 process.on("uncaughtException", (err) => {
