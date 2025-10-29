@@ -36,6 +36,14 @@ export const getAllFriends = catchAsync(async function (
     (req as CustomRequest).user.id as string
   );
 
+  const perPage = 2;
+  const page = Number(req.query.page || 1);
+
+  const totalFriends = await Friendship.find({
+    status: "accepted",
+    $or: [{ sender: selfId }, { receiver: selfId }],
+  }).countDocuments();
+
   const friendsList = await Friendship.aggregate([
     {
       $match: {
@@ -69,20 +77,39 @@ export const getAllFriends = catchAsync(async function (
         "friendInfo.resetToken",
         "friendInfo.accessToken",
         "friendInfo.refreshToken",
+        "friendInfo.__v",
       ],
+    },
+    {
+      $skip: page * perPage - perPage,
+    },
+    {
+      $limit: perPage,
     },
     {
       $unwind: { path: "$friendInfo", preserveNullAndEmptyArrays: true },
     },
+    {
+      $project: {
+        _id: 1,
+        status: 1,
+        friendInfo: 1,
+        createdAt: 1,
+      },
+    },
   ]);
-
-  console.log(friendsList, selfId);
 
   res.status(200).json({
     status: "success",
     message: "successfully retirve friend",
+    total: friendsList.length,
     data: {
       friend: friendsList,
+    },
+    pagination: {
+      total: totalFriends,
+      totalPages: Math.ceil(totalFriends / perPage),
+      page,
     },
   });
 });
