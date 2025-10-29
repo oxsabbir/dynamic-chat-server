@@ -3,6 +3,7 @@ import Friendship from "../model/Friendship";
 import catchAsync from "../utils/catch-async";
 import { CustomRequest } from "../types";
 import mongoose from "mongoose";
+import { errorMessage } from "../utils/send-response";
 
 export const getAllFriendRequest = catchAsync(async function (
   req: Request,
@@ -15,7 +16,7 @@ export const getAllFriendRequest = catchAsync(async function (
     receiver: selfId,
     status: "pending",
   })
-    .populate("sender", "fullName email", "User")
+    .populate("sender", "fullName email")
     .select("-receiver");
   res.status(200).json({
     status: "success",
@@ -239,9 +240,26 @@ export const removeFriend = catchAsync(async function (
   res: Response,
   next: NextFunction
 ) {
+  const friendId = req.params.id;
+  if (!friendId)
+    return next(
+      errorMessage(404, "friend-id not found to procced unfriend request")
+    );
+
+  const deletedFriend = await Friendship.findByIdAndUpdate(
+    friendId,
+    {
+      status: "deleted",
+    },
+    { new: true }
+  );
+
   res.status(204).json({
     status: "success",
     message: "friend removed successfully",
+    data: {
+      friend: deletedFriend,
+    },
   });
 });
 

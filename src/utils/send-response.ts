@@ -11,3 +11,13 @@ export default function sendResponse(
     data,
   });
 }
+
+export const errorMessage = function (
+  statusCode: number = 500,
+  messsage: string
+) {
+  return {
+    statusCode,
+    messsage,
+  };
+};

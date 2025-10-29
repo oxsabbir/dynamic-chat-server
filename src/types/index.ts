@@ -38,7 +38,7 @@ export interface Message extends Document {
 export interface FriendShip extends Document {
   sender: ObjectId;
   receiver: ObjectId;
-  status: "pending" | "accepted";
+  status: "pending" | "accepted" | "deleted";
   createdAt: Date;
 }
 
