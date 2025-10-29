@@ -7,9 +7,10 @@ import { routeProtect } from "./controller/auth-controller";
 import authRouther from "./routes/auth-router";
 import friendshipRouter from "./routes/friendship-router";
 import userRouter from "./routes/user-router";
+import groupRouter from "./routes/group-routes";
+import { SocketManager } from "./socket/socket-manager";
 
 const app = express();
-app.use(express.json());
 
 app.use(
   morgan((tokens, req, res) => {
@@ -28,6 +29,8 @@ process.on("uncaughtException", (err) => {
   console.log("💥 Uncaught Exception:", err.name, err.message);
   process.exit(1);
 });
+
+app.use(express.json());
 
 app.get("/", (_, res: Response) => {
   console.log("Server is running");
@@ -60,17 +63,11 @@ app.use((err: any, req: Request, res: Response, next: NextFunction) => {
 });
 
 const serverApp = http.createServer(app);
-// const io = new Server(serverApp, {});
 
-// io.on("connection", (socket) => {
-//   // ...
-//   console.log("Connection established");
-//   // console.log(socket);
-//   socket.on("user_message", (message) => {
-//     if (message) {
-//       socket.emit("hello", "world");
-//     }
-//   });
-// });
+const io = new Server(serverApp);
+
+io.on("connection", (socket) => {
+  new SocketManager(io, socket).init();
+});
 
 export default serverApp;
