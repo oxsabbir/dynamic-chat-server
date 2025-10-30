@@ -82,3 +82,37 @@ export const createGroup = catchAsync(async function (
     },
   });
 });
+
+export const removeGroup = catchAsync(async function (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  const groupId = req.params.id;
+  const selfId = (req as CustomRequest).user.id;
+  if (!groupId)
+    return next({
+      statusCode: 404,
+      message: "Please provide group id to procced",
+    });
+
+  const isAdmin = Group.find({ admin: selfId });
+  if (!isAdmin)
+    return next({
+      statusCode: 400,
+      message: "Only group admin can delete the group",
+    });
+
+  // when removing group. we must remove all messages that are relavant to this group
+
+  // for that i will use transaction later
+  const removedGroup = await Group.findByIdAndDelete(groupId);
+
+  res.status(204).json({
+    status: "success",
+    message: "Group removed successfully",
+    data: {
+      group: removedGroup,
+    },
+  });
+});
