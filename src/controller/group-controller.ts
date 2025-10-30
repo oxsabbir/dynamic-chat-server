@@ -90,6 +90,15 @@ export const manageMembers = function (actionType: "add" | "remove") {
     next: NextFunction
   ) {
     const groupId = req.params.id;
+    const selfId = (req as CustomRequest).user.id;
+
+    const isGroupAdmin = await Group.findOne({ _id: groupId, admin: selfId });
+
+    if (!isGroupAdmin)
+      return next({
+        statusCode: 403,
+        message: "Only admin can remove member from the group",
+      });
 
     const validMember = await validate(memberSchema, req.body, res, next);
     if (!validMember) return;

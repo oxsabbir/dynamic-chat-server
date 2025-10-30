@@ -13,7 +13,7 @@ groupRouter.get("/", getAllGroups);
 groupRouter.get("/:id", getGroup);
 groupRouter.post("/", createGroup);
 groupRouter.post("/add-member/:id", manageMembers("add"));
-groupRouter.post("/remove-member/:id", manageMembers("remove"));
+groupRouter.patch("/remove-member/:id", manageMembers("remove"));
 groupRouter.delete("/:id", removeGroup);
 
 export default groupRouter;
