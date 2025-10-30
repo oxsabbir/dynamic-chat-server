@@ -26,5 +26,19 @@ const groupSchema = new Schema<Group>({
   },
 });
 
+// groupSchema.pre(/^find/, function (next) {
+//   (this as mongoose.Query<any, any>).populate([
+//     {
+//       path: "members",
+//       select: "fullName profile email",
+//     },
+//     {
+//       path: "admin",
+//       select: "fullName profile email",
+//     },
+//   ]);
+//   next();
+// });
+
 const Group = model("Group", groupSchema);
 export default Group;
