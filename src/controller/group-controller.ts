@@ -83,34 +83,39 @@ export const createGroup = catchAsync(async function (
   });
 });
 
-export const addMember = catchAsync(async function (
-  req: Request,
-  res: Response,
-  next: NextFunction
-) {
-  const groupId = req.params.id;
+export const manageMembers = function (actionType: "add" | "remove") {
+  return catchAsync(async function (
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ) {
+    const groupId = req.params.id;
 
-  const validMember = await validate(memberSchema, req.body, res, next);
-  if (!validMember) return;
+    const validMember = await validate(memberSchema, req.body, res, next);
+    if (!validMember) return;
 
-  console.log(validMember?.members);
+    const filterObject =
+      actionType === "add"
+        ? {
+            $addToSet: { members: { $each: validMember.members } },
+          }
+        : {
+            $pull: { members: { $each: validMember.members } },
+          };
 
-  const group = await Group.findByIdAndUpdate(
-    groupId,
-    {
-      $addToSet: { members: { $each: validMember.members } },
-    },
-    { new: true }
-  );
+    const group = await Group.findByIdAndUpdate(groupId, filterObject, {
+      new: true,
+    });
 
-  res.status(200).json({
-    status: "succes",
-    message: "New member added successfully",
-    data: {
-      group: group,
-    },
+    res.status(200).json({
+      status: "succes",
+      message: "New member added successfully",
+      data: {
+        group: group,
+      },
+    });
   });
-});
+};
 
 export const removeGroup = catchAsync(async function (
   req: Request,
