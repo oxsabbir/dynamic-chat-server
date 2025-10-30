@@ -12,14 +12,14 @@ import {
 
 const friendshipRouter = Router();
 
-friendshipRouter.get("/get-all-friends", getAllFriends);
-friendshipRouter.get("/get-friend-request", getAllFriendRequest);
+friendshipRouter.get("/", getAllFriends);
+friendshipRouter.get("/friend-request", getAllFriendRequest);
 friendshipRouter.post("/send-request/:id", sentFriendRequest);
 friendshipRouter.post("/accept-request/:id", acceptFriendRequest);
-friendshipRouter.get("/get-blocked-user", getBlockedUserList);
-friendshipRouter.post("/block-friend/:id", manageBlocking("block"));
-friendshipRouter.post("/unblock-friend/:id", manageBlocking("unblock"));
+friendshipRouter.get("/blocked-user", getBlockedUserList);
+friendshipRouter.post("/block/:id", manageBlocking("block"));
+friendshipRouter.post("/unblock/:id", manageBlocking("unblock"));
 friendshipRouter.delete("/cancel-request/:id", cancelFriendRequest);
-friendshipRouter.delete("/remove-friend/:id", removeFriend);
+friendshipRouter.delete("/remove/:id", removeFriend);
 
 export default friendshipRouter;

@@ -7,8 +7,8 @@ import {
 
 const groupRouter = Router();
 
-groupRouter.get("/get-all-groups", getAllGroups);
-groupRouter.get("/get-group/:id", getGroup);
-groupRouter.post("/create", createGroup);
+groupRouter.get("/", getAllGroups);
+groupRouter.get("/:id", getGroup);
+groupRouter.post("/", createGroup);
 
 export default groupRouter;

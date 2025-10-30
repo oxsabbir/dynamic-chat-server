@@ -42,9 +42,9 @@ app.get("/", (_, res: Response) => {
 
 // defining routes
 app.use("/api/v1", authRouther);
-app.use("/api/v1/user", routeProtect, userRouter);
-app.use("/api/v1/group", routeProtect, groupRouter);
-app.use("/api/v1/friendship", routeProtect, friendshipRouter);
+app.use("/api/v1/users", routeProtect, userRouter);
+app.use("/api/v1/groups", routeProtect, groupRouter);
+app.use("/api/v1/friendships", routeProtect, friendshipRouter);
 
 // sending response for undefined route
 app.all("/{*splat}", (req, res, next) => {
