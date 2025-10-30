@@ -2,7 +2,7 @@ import { NextFunction, Request, Response } from "express";
 import Group from "../model/Group";
 import catchAsync from "../utils/catch-async";
 import validate from "../helpers/validate";
-import groupSchema from "../schema/group-schema";
+import { groupSchema, memberSchema } from "../schema/group-schema";
 import { CustomRequest } from "../types";
 
 export const getAllGroups = catchAsync(async function (
@@ -69,7 +69,7 @@ export const createGroup = catchAsync(async function (
   const group = await Group.create({
     admin: selfId,
     name: validBody.name,
-    members,
+    members: [...members, selfId],
   });
 
   const admin = "";
@@ -83,6 +83,35 @@ export const createGroup = catchAsync(async function (
   });
 });
 
+export const addMember = catchAsync(async function (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  const groupId = req.params.id;
+
+  const validMember = await validate(memberSchema, req.body, res, next);
+  if (!validMember) return;
+
+  console.log(validMember?.members);
+
+  const group = await Group.findByIdAndUpdate(
+    groupId,
+    {
+      $addToSet: { members: { $each: validMember.members } },
+    },
+    { new: true }
+  );
+
+  res.status(200).json({
+    status: "succes",
+    message: "New member added successfully",
+    data: {
+      group: group,
+    },
+  });
+});
+
 export const removeGroup = catchAsync(async function (
   req: Request,
   res: Response,
@@ -90,16 +119,17 @@ export const removeGroup = catchAsync(async function (
 ) {
   const groupId = req.params.id;
   const selfId = (req as CustomRequest).user.id;
-  if (!groupId)
+
+  const group = await Group.findOne({ _id: groupId });
+  if (!group)
     return next({
       statusCode: 404,
-      message: "Please provide group id to procced",
+      message: "Group not found using provided id",
     });
 
-  const isAdmin = Group.find({ admin: selfId });
-  if (!isAdmin)
+  if (group.admin !== selfId)
     return next({
-      statusCode: 400,
+      statusCode: 403,
       message: "Only group admin can delete the group",
     });
 

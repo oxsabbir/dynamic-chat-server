@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import { z } from "zod";
 
 export const groupSchema = z.object({
@@ -6,6 +7,14 @@ export const groupSchema = z.object({
   members: z.array(z.string()).min(1),
 });
 
-export default groupSchema;
+export const memberSchema = z.object({
+  members: z
+    .array(
+      z.string().refine((val) => mongoose.Types.ObjectId.isValid(val), {
+        message: "Please provide only valid user-id",
+      })
+    )
+    .min(1),
+});
 
 export type GroupInput = z.infer<typeof groupSchema>;
