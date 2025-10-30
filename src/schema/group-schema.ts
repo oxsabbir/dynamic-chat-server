@@ -4,10 +4,6 @@ import { z } from "zod";
 export const groupSchema = z.object({
   name: z.string("Provide a group name"),
   profile: z.file().optional(),
-  members: z.array(z.string()).min(1),
-});
-
-export const memberSchema = z.object({
   members: z
     .array(
       z.string().refine((val) => mongoose.Types.ObjectId.isValid(val), {

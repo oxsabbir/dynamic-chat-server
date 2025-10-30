@@ -2,7 +2,7 @@ import { NextFunction, Request, Response } from "express";
 import Group from "../model/Group";
 import catchAsync from "../utils/catch-async";
 import validate from "../helpers/validate";
-import { groupSchema, memberSchema } from "../schema/group-schema";
+import { groupSchema } from "../schema/group-schema";
 import { CustomRequest } from "../types";
 
 export const getAllGroups = catchAsync(async function (
@@ -94,14 +94,30 @@ export const manageMembers = function (actionType: "add" | "remove") {
 
     const isGroupAdmin = await Group.findOne({ _id: groupId, admin: selfId });
 
+    // only admin can remove a member from the group
     if (!isGroupAdmin)
       return next({
         statusCode: 403,
         message: "Only admin can remove member from the group",
       });
 
-    const validMember = await validate(memberSchema, req.body, res, next);
+    // only validating for members
+    const validMember = await validate(
+      groupSchema.pick({ members: true }),
+      req.body,
+      res,
+      next
+    );
     if (!validMember) return;
+
+    // before leaving group admin make someone else an admin
+
+    if (isGroupAdmin && validMember.members.includes(selfId))
+      return next({
+        statusCode: 400,
+        message:
+          "Admin cannot leave the group. please make someone else an admin",
+      });
 
     const filterObject =
       actionType === "add"
@@ -109,7 +125,7 @@ export const manageMembers = function (actionType: "add" | "remove") {
             $addToSet: { members: { $each: validMember.members } },
           }
         : {
-            $pull: { members: { $each: validMember.members } },
+            $pull: { members: { $in: validMember.members } },
           };
 
     const group = await Group.findByIdAndUpdate(groupId, filterObject, {
@@ -157,6 +173,34 @@ export const removeGroup = catchAsync(async function (
     message: "Group removed successfully",
     data: {
       group: removedGroup,
+    },
+  });
+});
+
+export const updateGroup = catchAsync(async function (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  const groupId = req.params.id;
+
+  const validData = await validate(
+    groupSchema.omit({ members: true }),
+    req.body,
+    res,
+    next
+  );
+  if (!validData) return;
+
+  const group = await Group.findByIdAndUpdate(groupId, validData, {
+    new: true,
+  });
+
+  res.status(200).json({
+    status: "success",
+    message: "Group updated successfully",
+    data: {
+      group: group,
     },
   });
 });
