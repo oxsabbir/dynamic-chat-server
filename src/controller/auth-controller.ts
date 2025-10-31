@@ -128,3 +128,14 @@ export const routeProtect = catchAsync(async function (
 
   next();
 });
+
+export const updateProfile = catchAsync(async function (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  res.status(200).json({
+    status: "success",
+    message: "Profile updated successfully",
+  });
+});
