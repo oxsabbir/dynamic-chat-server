@@ -134,6 +134,22 @@ export const updateProfile = catchAsync(async function (
   res: Response,
   next: NextFunction
 ) {
+  const validData = await validate(
+    userSchema.pick({ fullName: true }),
+    req.body,
+    res,
+    next
+  );
+  if (!validData) return;
+
+  console.log(req.file);
+
+  const selfId = (req as CustomRequest).user.id;
+
+  // const user = await User.findByIdAndUpdate(selfId, {
+  //   fullName: validData.fullName,
+  // });
+
   res.status(200).json({
     status: "success",
     message: "Profile updated successfully",
