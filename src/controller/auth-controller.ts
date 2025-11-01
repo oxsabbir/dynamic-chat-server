@@ -2,11 +2,14 @@ import { Request, Response, NextFunction } from "express";
 import User from "../model/User";
 import catchAsync from "../utils/catch-async";
 import validate from "../helpers/validate";
+import crypto from "crypto";
 import { userSchema, loginSchema } from "../schema/user-schema";
 
 import { verifyJwtSignature, generateJwtToken } from "../helpers/jwt-helper";
 import { User as UserType } from "../types";
 import { uploadFile } from "../helpers/cloudinary-helpers";
+import { errorMessage } from "../utils/send-response";
+import { getHashedString } from "../helpers/crypto-helpers";
 
 interface CustomRequest extends Request {
   user: Partial<UserType>;
@@ -59,7 +62,7 @@ export const login = catchAsync(async function (
   if (!userData)
     return next({
       statusCode: 404,
-      message: "no user exist regarding to this email",
+      message: "No user exist regarding to this email",
     });
 
   // comparing password
@@ -80,7 +83,13 @@ export const login = catchAsync(async function (
   };
 
   const token = generateJwtToken(plainUser);
+
   const refreshToken = generateJwtToken(plainUser, "refresh");
+
+  // saving the refresh token into db
+  if (userData._id && refreshToken) {
+    await replaceRefreshToken(userData._id as string, refreshToken);
+  }
 
   res.cookie("refresh_token", refreshToken, {
     httpOnly: true,
@@ -92,7 +101,65 @@ export const login = catchAsync(async function (
   res.status(200).json({
     status: "success",
     message: "user login successful",
-    token,
+    token: token,
+    data: userData,
+  });
+});
+
+export const tokenRotate = catchAsync(async function (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  // get the refresh token first
+  const refreshToken = req.cookies.refresh_token;
+  if (!refreshToken)
+    return next(
+      errorMessage(401, "Cannot find the refresh-token, Login and try again")
+    );
+
+  // check if it's valid token or not
+  const verify = verifyJwtSignature(refreshToken, "refresh");
+
+  // see if it's same as the token that stored on the DB
+  const hashedToken = getHashedString(refreshToken);
+  const authUser = await User.findOne({
+    refreshToken: hashedToken,
+  });
+
+  if (!authUser) return next(errorMessage(403, "Invalid refresh token"));
+
+  const plainUser = {
+    userId: authUser._id,
+    fullName: authUser.fullName,
+    email: authUser.email,
+  };
+
+  if (!verify || !authUser?.email)
+    return next(errorMessage(403, "Invalid refresh token"));
+
+  // if all went right. then generete new access token and new refresh token and store it to db
+  const newRefreshToken = generateJwtToken(plainUser, "refresh");
+  const newAccessToken = generateJwtToken(plainUser, "access");
+
+  await User.findByIdAndUpdate(authUser?.id, {
+    refreshToken: newRefreshToken,
+  });
+  await replaceRefreshToken(authUser?.id, newRefreshToken);
+
+  // sent the new refresh token as http only cookie
+  res.cookie("refresh_token", newRefreshToken, {
+    httpOnly: true,
+    secure: true,
+    sameSite: "none",
+    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+  });
+
+  // send new access token as response
+  res.status(200).json({
+    status: "success",
+    message: "user login successful",
+    token: newAccessToken,
     data: plainUser,
   });
 });
@@ -103,6 +170,7 @@ export const getMe = catchAsync(async function (
   next: NextFunction
 ) {
   const user = (req as CustomRequest).user;
+
   res.status(200).json({
     status: "success",
     data: {
@@ -173,3 +241,19 @@ export const updateProfile = catchAsync(async function (
     },
   });
 });
+
+const replaceRefreshToken = async function (
+  userId: string,
+  token: string | undefined
+) {
+  if (!token) return;
+  const hashedToken = getHashedString(token);
+  const updatedUser = await User.findByIdAndUpdate(
+    userId,
+    {
+      refreshToken: hashedToken,
+    },
+    { new: true }
+  ).select("-password");
+  return updatedUser;
+};

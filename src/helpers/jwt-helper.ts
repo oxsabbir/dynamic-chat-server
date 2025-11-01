@@ -1,6 +1,7 @@
 import jwt from "jsonwebtoken";
 import {
-  JWT_SECRET,
+  JWT_SECRET_ACCESS,
+  JWT_SECRET_REFRESH,
   JWT_ACCESS_EXPIRES,
   JWT_REFRESH_EXPIRES,
 } from "../config/extra";
@@ -20,7 +21,8 @@ export const generateJwtToken = function (
   const JWT_EXPIRES =
     tokenType === "access" ? JWT_ACCESS_EXPIRES : JWT_REFRESH_EXPIRES;
 
-  console.log(JWT_EXPIRES);
+  const JWT_SECRET =
+    tokenType === "access" ? JWT_SECRET_ACCESS : JWT_REFRESH_EXPIRES;
 
   if (!JWT_SECRET || !JWT_EXPIRES) return;
   const token = jwt.sign(payload, JWT_SECRET, {
@@ -30,11 +32,13 @@ export const generateJwtToken = function (
   return token;
 };
 
-export const verifyJwtSignature = function (token: string) {
+export const verifyJwtSignature = function (
+  token: string,
+  tokenType: "access" | "refresh" = "access"
+) {
+  const JWT_SECRET =
+    tokenType === "access" ? JWT_SECRET_ACCESS : JWT_REFRESH_EXPIRES;
+
   if (!JWT_SECRET) return;
   return jwt.verify(token, JWT_SECRET) as DecodeType;
-};
-
-export const checkTokenExpiry = function (expiryTime: number) {
-  const time = new Date(expiryTime);
 };

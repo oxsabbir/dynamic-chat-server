@@ -5,6 +5,7 @@ import {
   getMe,
   routeProtect,
   updateProfile,
+  tokenRotate,
 } from "../controller/auth-controller";
 import { upload } from "../middleware/upload";
 
@@ -12,6 +13,7 @@ const authRouther = Router();
 
 authRouther.post("/sign-up", signUp);
 authRouther.post("/login", login);
+authRouther.get("/refresh", tokenRotate);
 // authRouther.post("/forgot-password");
 // authRouther.post("/update-password");
 authRouther.post(
