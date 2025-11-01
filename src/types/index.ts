@@ -4,6 +4,7 @@ import { Request } from "express";
 export interface User extends Document {
   fullName: string;
   email: string;
+  profile: string;
   password: string;
   resetToken?: string;
   resetTokenExpiry: Date;

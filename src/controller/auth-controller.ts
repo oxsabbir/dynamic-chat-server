@@ -6,6 +6,7 @@ import { userSchema, loginSchema } from "../schema/user-schema";
 
 import { verifyJwtSignature, generateJwtToken } from "../helpers/jwt-helper";
 import { User as UserType } from "../types";
+import { uploadFile } from "../helpers/cloudinary-helpers";
 
 interface CustomRequest extends Request {
   user: Partial<UserType>;
@@ -141,17 +142,27 @@ export const updateProfile = catchAsync(async function (
     next
   );
   if (!validData) return;
+  const imageFile = req.file;
+  // if no file found uploadFile will silently return and do nothing then result would be emply
 
-  console.log(req.file);
+  const userInfo: Partial<UserType> = {
+    fullName: validData.fullName,
+  };
 
+  const result = await uploadFile(imageFile, "dynamic-chat/profile");
   const selfId = (req as CustomRequest).user.id;
-
-  // const user = await User.findByIdAndUpdate(selfId, {
-  //   fullName: validData.fullName,
-  // });
+  if (result?.secure_url) {
+    userInfo.profile = result.secure_url;
+  }
+  const updatedUser = await User.findByIdAndUpdate(selfId, userInfo, {
+    new: true,
+  }).select("-password -passwordChangedAt -resetToken");
 
   res.status(200).json({
     status: "success",
     message: "Profile updated successfully",
+    data: {
+      user: updatedUser,
+    },
   });
 });

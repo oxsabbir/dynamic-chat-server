@@ -12,6 +12,9 @@ const userSchema = new Schema<User>(
       type: String,
       required: [true, "email address is required"],
     },
+    profile: {
+      type: String,
+    },
     password: {
       type: String,
       required: [true, "password is required"],
