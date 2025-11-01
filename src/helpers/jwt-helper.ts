@@ -1,5 +1,9 @@
 import jwt from "jsonwebtoken";
-import { JWT_EXPIRES, JWT_SECRET } from "../config/extra";
+import {
+  JWT_SECRET,
+  JWT_ACCESS_EXPIRES,
+  JWT_REFRESH_EXPIRES,
+} from "../config/extra";
 
 interface DecodeType extends jwt.JwtPayload {
   userId: string;
@@ -9,11 +13,20 @@ interface DecodeType extends jwt.JwtPayload {
   exp: number;
 }
 
-export const generateJwtToken = function (payload: object) {
+export const generateJwtToken = function (
+  payload: object,
+  tokenType: "refresh" | "access" = "access"
+) {
+  const JWT_EXPIRES =
+    tokenType === "access" ? JWT_ACCESS_EXPIRES : JWT_REFRESH_EXPIRES;
+
+  console.log(JWT_EXPIRES);
+
   if (!JWT_SECRET || !JWT_EXPIRES) return;
   const token = jwt.sign(payload, JWT_SECRET, {
     expiresIn: JWT_EXPIRES as any,
   });
+
   return token;
 };
 

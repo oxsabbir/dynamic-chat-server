@@ -2,6 +2,7 @@ import http from "http";
 import morgan from "morgan";
 import { Server } from "socket.io";
 import express, { NextFunction, Response, Request } from "express";
+import cookieParser from "cookie-parser";
 import { routeProtect } from "./controller/auth-controller";
 
 import authRouther from "./routes/auth-router";
@@ -29,6 +30,8 @@ process.on("uncaughtException", (err) => {
   console.log("💥 Uncaught Exception:", err.name, err.message);
   process.exit(1);
 });
+
+app.use(cookieParser());
 
 app.use(express.json());
 

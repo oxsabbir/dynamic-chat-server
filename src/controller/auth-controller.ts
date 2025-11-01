@@ -80,6 +80,14 @@ export const login = catchAsync(async function (
   };
 
   const token = generateJwtToken(plainUser);
+  const refreshToken = generateJwtToken(plainUser, "refresh");
+
+  res.cookie("refresh_token", refreshToken, {
+    httpOnly: true,
+    secure: true,
+    sameSite: "none",
+    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+  });
 
   res.status(200).json({
     status: "success",
@@ -110,7 +118,7 @@ export const routeProtect = catchAsync(async function (
 ) {
   const errorResponse = {
     statusCode: 401,
-    message: "please login to get full access",
+    message: "Please login to get full access",
   };
   // getting the token from requeset headers
   const token = req.headers.authorization?.split(" ")[1];
@@ -126,7 +134,6 @@ export const routeProtect = catchAsync(async function (
   );
 
   (req as CustomRequest).user = userData || {};
-
   next();
 });
 
@@ -149,8 +156,8 @@ export const updateProfile = catchAsync(async function (
     fullName: validData.fullName,
   };
 
-  const result = await uploadFile(imageFile, "dynamic-chat/profile");
   const selfId = (req as CustomRequest).user.id;
+  const result = await uploadFile(imageFile, `dynamic-chat/profile/${selfId}`);
   if (result?.secure_url) {
     userInfo.profile = result.secure_url;
   }
