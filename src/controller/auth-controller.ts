@@ -247,9 +247,19 @@ export const forgotPassword = catchAsync(async function (
   const user = await User.findOne({ email: validInput.email });
   if (!user) return next(errorMessage(404, "No user found using this email"));
 
-  // send the token using email
-
+  // generate resetToken
   const resetToken = getHashedString(randomHasedString());
+
+  // user it temporerily on DB
+
+  const resetTokenExpiry = new Date().getTime() + 10 * 60 * 1000; // 10 minutes of expiry time
+
+  const updatedUser = await User.findByIdAndUpdate(user._id, {
+    resetToken: resetToken,
+    resetTokenExpiry: new Date(resetTokenExpiry).toISOString(),
+  });
+
+  // send the token using email
 
   res.status(200).json({
     status: "success",
@@ -258,8 +268,56 @@ export const forgotPassword = catchAsync(async function (
       resetToken: resetToken,
     },
   });
+});
 
-  console.log(resetToken);
+export const resetPassword = catchAsync(async function (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  const validInput = await validate(
+    userSchema.pick({ password: true }),
+    req.body,
+    res,
+    next
+  );
+  if (!validInput) return;
+
+  console.log("hi");
+
+  // get the hashed token
+  const resetToken = req.params.resetToken;
+
+  // check if it matches and did't expires
+  const tokenMatch = await User.findOne({
+    resetToken: resetToken,
+    resetTokenExpiry: { $gt: Date.now() },
+  });
+
+  if (!tokenMatch)
+    return next(
+      errorMessage(401, "Invalid reset token or reset token expired")
+    );
+
+  // change the password
+  const updatedUser = await User.findByIdAndUpdate(
+    tokenMatch.id,
+    {
+      password: validInput.password,
+    },
+    {
+      runValidators: true,
+      new: true,
+    }
+  );
+
+  res.status(200).json({
+    status: "success",
+    message: "Password updated successfully",
+    data: {
+      user: updatedUser,
+    },
+  });
 });
 
 export const updateProfile = catchAsync(async function (

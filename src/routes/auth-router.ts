@@ -7,7 +7,9 @@ import {
   updateProfile,
   tokenRotate,
   forgotPassword,
+  resetPassword,
 } from "../controller/auth-controller";
+
 import { upload } from "../middleware/upload";
 
 const authRouther = Router();
@@ -16,7 +18,7 @@ authRouther.post("/sign-up", signUp);
 authRouther.post("/login", login);
 authRouther.get("/refresh", tokenRotate);
 authRouther.post("/forgot-password", forgotPassword);
-// authRouther.post("/reset-password");
+authRouther.post("/reset-password/:resetToken", resetPassword);
 authRouther.post(
   "/update-profile",
   routeProtect,
@@ -24,6 +26,5 @@ authRouther.post(
   updateProfile
 );
 authRouther.get("/me", routeProtect, getMe);
-// authRouther.post("/sign-up-with-google");
 
 export default authRouther;
