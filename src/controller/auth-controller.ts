@@ -2,7 +2,6 @@ import { Request, Response, NextFunction } from "express";
 import User from "../model/User";
 import catchAsync from "../utils/catch-async";
 import validate from "../helpers/validate";
-import crypto from "crypto";
 import { userSchema, loginSchema } from "../schema/user-schema";
 
 import { verifyJwtSignature, generateJwtToken } from "../helpers/jwt-helper";
@@ -28,7 +27,7 @@ export const signUp = catchAsync(async function (
   if (userExist)
     return next({
       statusCode: 400,
-      message: "user already exist with this email",
+      message: "User already exist with this email",
     });
 
   const userData = (await User.create(validInput)).toJSON();
