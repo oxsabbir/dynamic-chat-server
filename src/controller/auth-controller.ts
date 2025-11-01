@@ -8,7 +8,7 @@ import { verifyJwtSignature, generateJwtToken } from "../helpers/jwt-helper";
 import { User as UserType } from "../types";
 import { uploadFile } from "../helpers/cloudinary-helpers";
 import { errorMessage } from "../utils/send-response";
-import { getHashedString } from "../helpers/crypto-helpers";
+import { getHashedString, randomHasedString } from "../helpers/crypto-helpers";
 
 interface CustomRequest extends Request {
   user: Partial<UserType>;
@@ -31,21 +31,35 @@ export const signUp = catchAsync(async function (
     });
 
   const userData = (await User.create(validInput)).toJSON();
-  const finalData: any = { ...userData };
-  delete finalData.password;
 
   // generating the token
+  const refreshToken = generateJwtToken(
+    {
+      userId: userData._id,
+      fullName: userData.fullName,
+      email: userData.email,
+    },
+    "refresh"
+  );
+
   const token = generateJwtToken({
-    userId: finalData._id,
-    fullName: finalData.fullName,
-    email: finalData.fullName,
+    userId: userData._id,
+    fullName: userData.fullName,
+    email: userData.email,
+  });
+
+  res.cookie("refresh_token", refreshToken, {
+    httpOnly: true,
+    secure: true,
+    sameSite: "none",
+    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
   });
 
   res.status(201).json({
     status: "success",
     message: "User created",
     token,
-    data: finalData,
+    data: userData,
   });
 });
 
@@ -57,7 +71,9 @@ export const login = catchAsync(async function (
   const validInput = await validate(loginSchema, req.body, res, next);
   if (!validInput) return;
   // check for user
-  const userData = await User.findOne({ email: validInput.email });
+  const userData = await User.findOne({ email: validInput.email }).select(
+    "+password"
+  );
   if (!userData)
     return next({
       statusCode: 404,
@@ -89,6 +105,11 @@ export const login = catchAsync(async function (
   if (userData._id && refreshToken) {
     await replaceRefreshToken(userData._id as string, refreshToken);
   }
+  const userDataModified: Partial<UserType> = {
+    ...userData.toObject(),
+  };
+  delete userDataModified.password;
+  delete userDataModified.blocked;
 
   res.cookie("refresh_token", refreshToken, {
     httpOnly: true,
@@ -101,7 +122,9 @@ export const login = catchAsync(async function (
     status: "success",
     message: "user login successful",
     token: token,
-    data: userData,
+    data: {
+      user: userDataModified,
+    },
   });
 });
 
@@ -141,9 +164,13 @@ export const tokenRotate = catchAsync(async function (
   const newRefreshToken = generateJwtToken(plainUser, "refresh");
   const newAccessToken = generateJwtToken(plainUser, "access");
 
-  await User.findByIdAndUpdate(authUser?.id, {
-    refreshToken: newRefreshToken,
-  });
+  const updatedUser = await User.findByIdAndUpdate(
+    authUser?.id,
+    {
+      refreshToken: newRefreshToken,
+    },
+    { new: true }
+  );
   await replaceRefreshToken(authUser?.id, newRefreshToken);
 
   // sent the new refresh token as http only cookie
@@ -157,9 +184,11 @@ export const tokenRotate = catchAsync(async function (
   // send new access token as response
   res.status(200).json({
     status: "success",
-    message: "user login successful",
+    message: "Token validated successfully",
     token: newAccessToken,
-    data: plainUser,
+    data: {
+      user: updatedUser,
+    },
   });
 });
 
@@ -196,12 +225,41 @@ export const routeProtect = catchAsync(async function (
   if (!decode?.email) return next(errorResponse);
 
   // see user exist
-  const userData = await User.findOne({ email: decode.email }).select(
-    "-password -passwordChangedAt"
-  );
+  const userData = await User.findOne({ email: decode.email });
 
   (req as CustomRequest).user = userData || {};
   next();
+});
+
+export const forgotPassword = catchAsync(async function (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  const validInput = await validate(
+    userSchema.pick({ email: true }),
+    req.body,
+    res,
+    next
+  );
+  if (!validInput) return;
+
+  const user = await User.findOne({ email: validInput.email });
+  if (!user) return next(errorMessage(404, "No user found using this email"));
+
+  // send the token using email
+
+  const resetToken = getHashedString(randomHasedString());
+
+  res.status(200).json({
+    status: "success",
+    message: "We've sent you an reset token to your email",
+    data: {
+      resetToken: resetToken,
+    },
+  });
+
+  console.log(resetToken);
 });
 
 export const updateProfile = catchAsync(async function (
@@ -230,7 +288,7 @@ export const updateProfile = catchAsync(async function (
   }
   const updatedUser = await User.findByIdAndUpdate(selfId, userInfo, {
     new: true,
-  }).select("-password -passwordChangedAt -resetToken");
+  });
 
   res.status(200).json({
     status: "success",
@@ -253,6 +311,6 @@ const replaceRefreshToken = async function (
       refreshToken: hashedToken,
     },
     { new: true }
-  ).select("-password");
+  );
   return updatedUser;
 };

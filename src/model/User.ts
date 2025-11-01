@@ -18,12 +18,15 @@ const userSchema = new Schema<User>(
     password: {
       type: String,
       required: [true, "password is required"],
+      select: false,
     },
     resetToken: {
       type: String,
+      select: false,
     },
     resetTokenExpiry: {
       type: Date,
+      select: false,
     },
     blocked: [
       {
@@ -37,6 +40,7 @@ const userSchema = new Schema<User>(
     },
     refreshToken: {
       type: String,
+      select: false,
     },
     createdAt: {
       type: Date,
