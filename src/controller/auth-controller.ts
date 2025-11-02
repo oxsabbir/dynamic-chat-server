@@ -246,7 +246,7 @@ export const routeProtect = catchAsync(async function (
   (req as CustomRequest).user = {
     id: userData.id,
     fullName: userData.fullName,
-    email: userData.fullName,
+    email: userData.email,
     _id: userData._id,
   };
   next();
