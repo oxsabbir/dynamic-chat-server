@@ -14,10 +14,10 @@ export default function sendResponse(
 
 export const errorMessage = function (
   statusCode: number = 500,
-  messsage: string
+  message: string
 ) {
   return {
     statusCode,
-    messsage,
+    message,
   };
 };

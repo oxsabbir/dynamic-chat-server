@@ -225,9 +225,30 @@ export const routeProtect = catchAsync(async function (
   if (!decode?.email) return next(errorResponse);
 
   // see user exist
-  const userData = await User.findOne({ email: decode.email });
+  const userData = await User.findOne({ email: decode.email }).select(
+    "+passwordChangedAt"
+  );
+  if (!userData)
+    return next(errorMessage(400, "No user found related to provided token"));
 
-  (req as CustomRequest).user = userData || {};
+  // check if user changed the password after the token intialization.
+  if (
+    decode.iat * 1000 <
+    new Date(userData.passwordChangedAt as string).getTime()
+  )
+    return next(
+      errorMessage(
+        403,
+        "Password updated after the token initilization, Please login again"
+      )
+    );
+
+  (req as CustomRequest).user = {
+    id: userData.id,
+    fullName: userData.fullName,
+    email: userData.fullName,
+    _id: userData._id,
+  };
   next();
 });
 
@@ -283,33 +304,32 @@ export const resetPassword = catchAsync(async function (
   );
   if (!validInput) return;
 
-  console.log("hi");
-
   // get the hashed token
   const resetToken = req.params.resetToken;
 
   // check if it matches and did't expires
-  const tokenMatch = await User.findOne({
+  const tokenMatchUser = await User.findOne({
     resetToken: resetToken,
     resetTokenExpiry: { $gt: Date.now() },
   });
 
-  if (!tokenMatch)
+  if (!tokenMatchUser)
     return next(
       errorMessage(401, "Invalid reset token or reset token expired")
     );
 
   // change the password
-  const updatedUser = await User.findByIdAndUpdate(
-    tokenMatch.id,
-    {
-      password: validInput.password,
-    },
-    {
-      runValidators: true,
-      new: true,
-    }
-  );
+  tokenMatchUser.password = validInput.password;
+  tokenMatchUser.passwordChangedAt = new Date(Date.now()).toISOString();
+
+  // remove the reset token and it's expiry time
+  tokenMatchUser.resetToken = undefined;
+  tokenMatchUser.resetTokenExpiry = undefined;
+
+  const updatedUser: Partial<UserType> = (
+    await tokenMatchUser.save({ validateBeforeSave: true })
+  ).toObject();
+  delete updatedUser.password;
 
   res.status(200).json({
     status: "success",

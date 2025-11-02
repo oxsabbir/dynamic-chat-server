@@ -20,11 +20,7 @@ const userSchema = new Schema<User>(
       required: [true, "password is required"],
       select: false,
     },
-    resetToken: {
-      type: String,
-      select: false,
-    },
-    resetTokenExpiry: {
+    passwordChangedAt: {
       type: Date,
       select: false,
     },
@@ -33,10 +29,16 @@ const userSchema = new Schema<User>(
         type: mongoose.SchemaTypes.ObjectId,
         ref: "User",
         default: [],
+        select: false,
       },
     ],
-    accessToken: {
+    resetToken: {
       type: String,
+      select: false,
+    },
+    resetTokenExpiry: {
+      type: Date,
+      select: false,
     },
     refreshToken: {
       type: String,

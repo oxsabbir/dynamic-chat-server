@@ -7,9 +7,8 @@ export interface User extends Document {
   profile: string;
   password: string;
   resetToken?: string;
-  resetTokenExpiry: Date;
+  resetTokenExpiry?: Date;
   refreshToken?: string;
-  accessToken?: string;
   passwordChangedAt?: string;
   blocked: ObjectId[];
   comparePassword: (
