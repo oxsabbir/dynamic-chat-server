@@ -10,15 +10,17 @@ const messageSchema = new Schema<Message>({
     type: mongoose.SchemaTypes.ObjectId,
     required: true,
   },
-  type: {
+  message: {
     type: String,
-    enum: ["text", "mixed"],
-    default: "text",
+  },
+  status: {
+    type: String,
+    enum: ["sent", "seen"],
+    default: "sent",
   },
   sendTo: {
     type: String,
     enum: ["dm", "group"],
-    required: true,
   },
   createdAt: {
     type: Date,

@@ -1,5 +1,10 @@
 import { Socket, Server } from "socket.io";
-import { Message } from "../types";
+import { Message as MessageType } from "../types";
+import { verifyJwtSignature } from "../helpers/jwt-helper";
+import Message from "../model/Message";
+
+// handling in memory online offline status for now later it will be updated with redis
+const userOnline: Map<string, string> = new Map();
 
 export class SocketManager {
   io: Server;
@@ -15,28 +20,64 @@ export class SocketManager {
   init() {
     // handling connection
     this.onConnection();
-
     // handling disconnection
     this.socket.on("disconnect", () => {
       this.onDisconnect();
     });
-
-    this.socket.on("user_message", (message) => {
-      if (message) {
-        console.log(message);
-        console.log(this.socket.id, "socket-id");
-        this.io.emit("from_server", `From server : ${JSON.stringify(message)}`);
-      }
-    });
   }
 
-  onConnection() {
+  async onConnection() {
     console.log("User connected :", this.socket.id);
+    this.userId = this.socket.id;
+    // decode user info
+    const token = this.socket.handshake.query.token as string;
+    await this.getAuthUser(token);
+
+    // sendMessage
+    this.socket.on("send_message", this.sendMessage.bind(this));
+    this.socket.emit("user_online", `${JSON.stringify(userOnline)}`);
   }
 
   onDisconnect() {
     console.log("User disconnected :", this.socket.id);
+    userOnline.delete(this.userId);
+    this.socket.emit("user_online", `${JSON.stringify(userOnline)}`);
   }
 
-  sendMessage(receiverId: string, message: Partial<Message>) {}
+  async getAuthUser(token: string) {
+    try {
+      const decode = verifyJwtSignature(token);
+      if (decode?.userId) {
+        this.userId = decode.userId;
+        userOnline.set(decode.userId, this.socket.id);
+      }
+    } catch (error: any) {
+      console.log(error);
+      throw new Error("Invalid token or expired");
+    }
+  }
+
+  async sendMessage(messageBody: MessageType) {
+    // find the socket id from receiverId from the userOnline list.
+    const message: Partial<MessageType> = {
+      sender: this.userId,
+      receiver: messageBody.receiver,
+      message: messageBody.message,
+    };
+
+    if (messageBody.receiver) {
+      // if user online then send the message to the socket client
+      const userSocket = userOnline.get(messageBody.receiver as string);
+      try {
+        const savedMessage = await Message.create(message);
+      } catch (error: any) {
+        if (error) {
+          console.log(error);
+          throw new Error(error?.message || "Can't save message");
+        }
+      }
+
+      if (userSocket) this.io.to(userSocket).emit("user_message", message);
+    }
+  }
 }

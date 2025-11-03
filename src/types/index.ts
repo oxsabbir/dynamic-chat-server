@@ -27,12 +27,13 @@ export interface Group extends Document {
 }
 
 export interface Message extends Document {
-  sender: ObjectId;
-  receiver: ObjectId;
-  status: "sent" | "seen";
-  type: "text" | "mixed";
-  sendTo: "dm" | "group";
-  createdAt: Date;
+  sender: ObjectId | string;
+  receiver: ObjectId | string;
+  message: string;
+  status?: "sent" | "seen";
+  type?: "text" | "mixed";
+  sendTo?: "dm" | "group";
+  createdAt?: Date;
 }
 
 export interface FriendShip extends Document {
