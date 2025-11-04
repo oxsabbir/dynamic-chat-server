@@ -18,6 +18,14 @@ export interface User extends Document {
   createdAt: Date;
 }
 
+export interface Conversation extends Document {
+  participant: ObjectId[];
+  lastMessage: ObjectId;
+  lastMessageTime: Date;
+  isRead: boolean;
+  createdAt: Date;
+}
+
 export interface Group extends Document {
   name: string;
   profile: string;
