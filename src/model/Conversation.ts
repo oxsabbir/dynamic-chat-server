@@ -8,6 +8,13 @@ const conversationSchema = new Schema<Conversation>({
       ref: "User",
     },
   ],
+  isGroup: {
+    type: Boolean,
+  },
+  group: {
+    type: mongoose.SchemaTypes.ObjectId,
+    ref: "Group",
+  },
   lastMessage: {
     type: String,
   },

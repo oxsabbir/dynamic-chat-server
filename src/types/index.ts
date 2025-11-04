@@ -22,6 +22,8 @@ export interface Conversation extends Document {
   participant: ObjectId[];
   lastMessage: ObjectId;
   lastMessageTime: Date;
+  isGroup: boolean;
+  group: ObjectId;
   isRead: boolean;
   createdAt: Date;
 }

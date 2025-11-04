@@ -1,7 +1,6 @@
 import { NextFunction, Request, Response } from "express";
 import Message from "../model/Message";
 import catchAsync from "../utils/catch-async";
-
 import Group from "../model/Group";
 
 export const getInbox = catchAsync(async function (

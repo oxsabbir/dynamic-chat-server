@@ -33,6 +33,11 @@ export class SocketManager {
     this.userId = this.socket.id;
     // decode user info
     const token = this.socket.handshake.query.token as string;
+    // joining to the room for group chat
+    const room = this.socket.handshake.query.room;
+    if (room) {
+      this.socket.join(room);
+    }
     await this.getAuthUser(token);
 
     // sendMessage
@@ -57,6 +62,10 @@ export class SocketManager {
       console.log(error);
       throw new Error("Invalid token or expired");
     }
+  }
+
+  async sendGroupMessage(messageBody: MessageType, room: string) {
+    // get the message send it to the
   }
 
   async sendMessage(messageBody: MessageType) {
@@ -92,10 +101,13 @@ export class SocketManager {
     try {
       const savedMessage = await Message.create(message);
       // update he converstation last message and timestamps
-      await conversationExist?.updateOne({
-        lastMessage: savedMessage.message,
-        lastMessageTime: savedMessage.createdAt,
-      });
+      if (conversationExist) {
+        await conversationExist?.updateOne({
+          lastMessage: savedMessage.message,
+          lastMessageTime: savedMessage.createdAt,
+        });
+      }
+
       if (userSocket) this.io.to(userSocket).emit("user_message", savedMessage);
     } catch (error: any) {
       if (error) {
