@@ -5,13 +5,20 @@ const messageSchema = new Schema<Message>({
   sender: {
     type: mongoose.SchemaTypes.ObjectId,
     required: true,
+    ref: "User",
   },
   receiver: {
     type: mongoose.SchemaTypes.ObjectId,
     required: true,
+    ref: "User",
   },
   message: {
     type: String,
+  },
+  conversation: {
+    type: mongoose.SchemaTypes.ObjectId,
+    required: true,
+    ref: "Conversation",
   },
   status: {
     type: String,

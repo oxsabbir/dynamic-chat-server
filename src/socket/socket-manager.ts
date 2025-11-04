@@ -2,6 +2,8 @@ import { Socket, Server } from "socket.io";
 import { Message as MessageType } from "../types";
 import { verifyJwtSignature } from "../helpers/jwt-helper";
 import Message from "../model/Message";
+import Conversation from "../model/Conversation";
+import { ObjectId } from "mongoose";
 
 // handling in memory online offline status for now later it will be updated with redis
 const userOnline: Map<string, string> = new Map();
@@ -58,26 +60,48 @@ export class SocketManager {
   }
 
   async sendMessage(messageBody: MessageType) {
+    if (!messageBody.receiver || !messageBody.message)
+      throw new Error("Message needs a receiver and message content");
+
+    // create conversation if doesn't exist
+    let conversationId: ObjectId;
+
+    const conversationExist = await Conversation.findOne({
+      participant: { $all: [this.userId, messageBody.receiver] },
+    });
+    if (conversationExist?.id) {
+      conversationId = conversationExist.id;
+    } else {
+      const newConversation = await Conversation.create({
+        participant: [this.userId, messageBody.receiver],
+        lastMessage: messageBody.message,
+      });
+      conversationId = newConversation.id;
+    }
+
     // find the socket id from receiverId from the userOnline list.
     const message: Partial<MessageType> = {
       sender: this.userId,
       receiver: messageBody.receiver,
       message: messageBody.message,
+      conversation: conversationId,
     };
 
-    if (messageBody.receiver) {
-      // if user online then send the message to the socket client
-      const userSocket = userOnline.get(messageBody.receiver as string);
-      try {
-        const savedMessage = await Message.create(message);
-      } catch (error: any) {
-        if (error) {
-          console.log(error);
-          throw new Error(error?.message || "Can't save message");
-        }
+    // if user online then send the message to the socket client
+    const userSocket = userOnline.get(messageBody.receiver as string);
+    try {
+      const savedMessage = await Message.create(message);
+      // update he converstation last message and timestamps
+      await conversationExist?.updateOne({
+        lastMessage: savedMessage.message,
+        lastMessageTime: savedMessage.createdAt,
+      });
+      if (userSocket) this.io.to(userSocket).emit("user_message", savedMessage);
+    } catch (error: any) {
+      if (error) {
+        console.log(error);
+        throw new Error(error?.message || "Can't save message");
       }
-
-      if (userSocket) this.io.to(userSocket).emit("user_message", message);
     }
   }
 }

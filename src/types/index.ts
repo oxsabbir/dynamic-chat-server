@@ -38,6 +38,7 @@ export interface Message extends Document {
   sender: ObjectId | string;
   receiver: ObjectId | string;
   message: string;
+  conversation: ObjectId | string;
   status?: "sent" | "seen";
   type?: "text" | "mixed";
   sendTo?: "dm" | "group";
