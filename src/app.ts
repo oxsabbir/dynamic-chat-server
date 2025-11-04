@@ -10,6 +10,7 @@ import friendshipRouter from "./routes/friendship-router";
 import userRouter from "./routes/user-router";
 import groupRouter from "./routes/group-routes";
 import { SocketManager } from "./socket/socket-manager";
+import messageRouter from "./routes/message-router";
 
 const app = express();
 
@@ -47,6 +48,7 @@ app.get("/", (_, res: Response) => {
 app.use("/api/v1", authRouther);
 app.use("/api/v1/users", routeProtect, userRouter);
 app.use("/api/v1/groups", routeProtect, groupRouter);
+app.use("/api/v1/messages", routeProtect, messageRouter);
 app.use("/api/v1/friendships", routeProtect, friendshipRouter);
 
 // sending response for undefined route
