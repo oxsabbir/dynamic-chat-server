@@ -36,6 +36,12 @@ export interface Group extends Document {
   createdAt: Date;
 }
 
+export interface IMember extends Document {
+  group: ObjectId;
+  user: ObjectId;
+  createdAt: Date;
+}
+
 export interface Message extends Document {
   sender: ObjectId | string;
   receiver: ObjectId | string;
