@@ -16,5 +16,7 @@ const memberSchema = new Schema<IMember>({
   },
 });
 
+memberSchema.index({ group: 1, user: 1 }, { unique: true });
+
 const Member = model("Member", memberSchema);
 export default Member;

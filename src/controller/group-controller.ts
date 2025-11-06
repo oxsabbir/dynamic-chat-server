@@ -15,7 +15,6 @@ export const getAllGroups = catchAsync(async function (
   const selfId = (req as CustomRequest).user.id;
   const members = await Member.find({ user: selfId }).select("group");
   const groupIds = members.map((member) => member.group);
-  console.log(groupIds);
 
   const groupList = await Group.find({
     _id: { $in: groupIds },
@@ -36,16 +35,23 @@ export const getGroup = catchAsync(async function (
   next: NextFunction
 ) {
   const groupId = req.params.id;
+
   const group = await Group.findById(groupId).populate([
-    {
-      path: "members",
-      select: "fullName profile",
-    },
     {
       path: "admin",
       select: "fullName profile",
     },
   ]);
+  const groupMembers = await Member.find({ group: group?._id })
+    .select("user -_id")
+    .populate({
+      path: "user",
+      select: "fullName profile",
+    });
+
+  const flattendMember = groupMembers.map((member) => ({
+    ...member.toObject().user,
+  }));
 
   if (!group)
     return next(errorMessage(404, "No group found using provided id"));
@@ -54,7 +60,7 @@ export const getGroup = catchAsync(async function (
     status: "success",
     message: "Group retrived successfully",
     data: {
-      group: group,
+      group: { ...group.toObject(), members: flattendMember },
     },
   });
 });
@@ -122,31 +128,53 @@ export const manageMembers = function (actionType: "add" | "remove") {
 
     // before leaving group admin make someone else an admin
 
-    if (isGroupAdmin && validMember.members.includes(selfId))
+    if (
+      isGroupAdmin &&
+      validMember.members.includes(selfId) &&
+      actionType === "remove"
+    )
       return next({
         statusCode: 400,
         message:
           "Admin cannot leave the group. please make someone else an admin",
       });
 
-    const filterObject =
-      actionType === "add"
-        ? {
-            $addToSet: { members: { $each: validMember.members } },
-          }
-        : {
-            $pull: { members: { $in: validMember.members } },
-          };
+    // here we are add and removing member
+    if (actionType === "add") {
+      await Member.create(
+        validMember.members.map((memberId) => ({
+          user: memberId,
+          group: groupId,
+        }))
+      );
+    } else if (actionType === "remove") {
+      await Member.deleteMany({
+        group: groupId,
+        user: { $in: validMember.members },
+      });
+    }
 
-    const group = await Group.findByIdAndUpdate(groupId, filterObject, {
-      new: true,
-    });
+    const group = await Group.findById(groupId);
+
+    const groupMembers = await Member.find({ group: group?._id })
+      .select("user -_id")
+      .populate({
+        path: "user",
+        select: "fullName profile",
+      });
+
+    const flattendMember = groupMembers.map((member) => ({
+      ...member.toObject().user,
+    }));
 
     res.status(200).json({
       status: "succes",
-      message: "New member added successfully",
+      message: `Group member ${actionType === "add" ? "added" : "removed"} successfully`,
       data: {
-        group: group,
+        group: {
+          ...group?.toObject(),
+          members: flattendMember,
+        },
       },
     });
   });
