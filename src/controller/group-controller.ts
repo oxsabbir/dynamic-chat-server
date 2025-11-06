@@ -4,6 +4,8 @@ import catchAsync from "../utils/catch-async";
 import validate from "../helpers/validate";
 import { groupSchema } from "../schema/group-schema";
 import { CustomRequest } from "../types";
+import { errorMessage } from "../utils/send-response";
+import Member from "../model/Member";
 
 export const getAllGroups = catchAsync(async function (
   req: Request,
@@ -41,15 +43,14 @@ export const getGroup = catchAsync(async function (
     },
   ]);
 
-  // later here we will get the last 20 message
-  const messages = ["hi"];
+  if (!group)
+    return next(errorMessage(404, "No group found using provided id"));
 
   res.status(200).json({
     status: "success",
     message: "Group retrived successfully",
     data: {
       group: group,
-      messages: messages,
     },
   });
 });
@@ -62,17 +63,19 @@ export const createGroup = catchAsync(async function (
   const validBody = await validate(groupSchema, req.body, res, next);
   if (!validBody) return;
 
-  const members = validBody.members;
-
   const selfId = (req as CustomRequest).user.id;
 
+  // first create the group
   const group = await Group.create({
     admin: selfId,
     name: validBody.name,
-    members: [...members, selfId],
   });
-
-  const admin = "";
+  // once the group is created add member by creating member data if any member id provided
+  if (group && validBody.members.length > 0) {
+    await Member.insertMany(
+      validBody.members.map((userId) => ({ group: group.id, user: userId }))
+    );
+  }
 
   res.status(200).json({
     status: "success",

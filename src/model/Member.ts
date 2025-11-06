@@ -16,5 +16,5 @@ const memberSchema = new Schema<IMember>({
   },
 });
 
-const Group = model("Group", memberSchema);
-export default Group;
+const Member = model("Member", memberSchema);
+export default Member;

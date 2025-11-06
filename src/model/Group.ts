@@ -9,12 +9,6 @@ const groupSchema = new Schema<Group>({
   profile: {
     type: String,
   },
-  members: [
-    {
-      type: mongoose.SchemaTypes.ObjectId,
-      ref: "User",
-    },
-  ],
   admin: {
     type: mongoose.SchemaTypes.ObjectId,
     ref: "User",
