@@ -10,7 +10,10 @@ export const groupSchema = z.object({
         message: "Please provide only valid user-id",
       })
     )
-    .min(1),
+    .min(1)
+    .refine((arr) => new Set(arr).size === arr.length, {
+      message: "Members array should not contain duplicates",
+    }),
 });
 
 export type GroupInput = z.infer<typeof groupSchema>;

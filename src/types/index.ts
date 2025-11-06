@@ -31,6 +31,7 @@ export interface Conversation extends Document {
 export interface Group extends Document {
   name: string;
   profile: string;
+  members: ObjectId[];
   admin: ObjectId;
   createdAt: Date;
 }

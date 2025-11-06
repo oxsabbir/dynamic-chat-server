@@ -13,8 +13,12 @@ export const getAllGroups = catchAsync(async function (
   next: NextFunction
 ) {
   const selfId = (req as CustomRequest).user.id;
+  const members = await Member.find({ user: selfId }).select("group");
+  const groupIds = members.map((member) => member.group);
+  console.log(groupIds);
+
   const groupList = await Group.find({
-    $or: [{ admin: selfId }, { members: { $in: selfId } }],
+    _id: { $in: groupIds },
   });
 
   res.status(200).json({
@@ -64,6 +68,9 @@ export const createGroup = catchAsync(async function (
   if (!validBody) return;
 
   const selfId = (req as CustomRequest).user.id;
+
+  // adding creator as an member as well
+  validBody.members.push(selfId);
 
   // first create the group
   const group = await Group.create({
