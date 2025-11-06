@@ -6,6 +6,8 @@ import { groupSchema } from "../schema/group-schema";
 import { CustomRequest } from "../types";
 import { errorMessage } from "../utils/send-response";
 import Member from "../model/Member";
+import mongoose, { Types } from "mongoose";
+import Message from "../model/Message";
 
 export const getAllGroups = catchAsync(async function (
   req: Request,
@@ -192,26 +194,34 @@ export const removeGroup = catchAsync(async function (
   if (!group)
     return next({
       statusCode: 404,
-      message: "Group not found using provided id",
+      message: "No group found with provided id",
     });
 
-  if (group.admin !== selfId)
+  if (String(group.admin) !== selfId)
     return next({
       statusCode: 403,
       message: "Only group admin can delete the group",
     });
 
-  // when removing group. we must remove all messages that are relavant to this group
+  // when removing group, we must remove all messages that are relavant to this group
 
-  // for that i will use transaction later
-  const removedGroup = await Group.findByIdAndDelete(groupId);
+  // starting transaction session to apply all these
+  const session = await mongoose.startSession();
+
+  session.startTransaction();
+  // delete group member
+  await Member.deleteMany({ group: groupId });
+  // delete the group itself
+  await Group.findByIdAndDelete(groupId);
+
+  //  delete message regarding to this group (later)
+  await Message.deleteMany({ receiver: groupId });
+
+  await session.commitTransaction();
 
   res.status(204).json({
     status: "success",
     message: "Group removed successfully",
-    data: {
-      group: removedGroup,
-    },
   });
 });
 
