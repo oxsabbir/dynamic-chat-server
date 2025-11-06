@@ -43,18 +43,20 @@ export class SocketManager {
     }
     await this.getAuthUser(token);
 
-    // sendMessage
+    // socket event binding
+
     this.socket.on("send_message", this.sendMessage.bind(this));
-    this.socket.on("send_message_group", (message) => {
-      this.io.to(room as string).emit("user_message", message);
+    this.socket.on("send_group_message", (message) => {
+      this.sendGroupMessage.call(this, message, room);
     });
-    this.socket.emit("user_online", `${JSON.stringify(userOnline)}`);
+
+    this.io.emit("user_online", Object.fromEntries(userOnline));
   }
 
   onDisconnect() {
     console.log("User disconnected :", this.socket.id);
     userOnline.delete(this.userId);
-    this.socket.emit("user_online", `${JSON.stringify(userOnline)}`);
+    this.io.emit("user_online", Object.fromEntries(userOnline));
   }
 
   async getAuthUser(token: string) {
@@ -70,36 +72,68 @@ export class SocketManager {
     }
   }
 
-  async sendGroupMessage(messageBody: MessageType, room: string) {
+  async sendGroupMessage(
+    messageBody: MessageType,
+    roomId: string | string[] | undefined
+  ) {
     // get the message send it to the
+    console.log(roomId);
+    await this.sendMessage(messageBody, "group", roomId);
+    // check if conversation exist with the group id
+    // if not create one and add it to the message
   }
 
-  async getConversation(receiverId: ObjectId, lastMessage: string) {
+  async getConversation(
+    receiverId: ObjectId,
+    lastMessage: string,
+    sentTo: "dm" | "group" = "dm"
+  ) {
+    // if sentTo dm the receive will be the user to send, else it will be the group id
     let conversation: ConversationType | null;
-    conversation = await Conversation.findOne({
-      participant: { $all: [this.userId, receiverId] },
-    });
+
+    const matchCondition =
+      sentTo === "group"
+        ? {
+            group: receiverId,
+            isGroup: true,
+          }
+        : {
+            participant: { $all: [this.userId, receiverId] },
+          };
+
+    // assigning the conversation
+    conversation = await Conversation.findOne(matchCondition);
 
     // create conversation if doesn't exist
+    // checking the sent type
+    const newConversation: any =
+      sentTo === "group"
+        ? { isGroup: true, group: receiverId, lastMessage: lastMessage }
+        : {
+            participant: [this.userId, receiverId],
+            lastMessage: lastMessage,
+          };
     if (!conversation) {
-      conversation = await Conversation.create({
-        participant: [this.userId, receiverId],
-        lastMessage: lastMessage,
-      });
+      conversation = await Conversation.create(newConversation);
     }
     return conversation;
   }
 
-  async sendMessage(messageBody: MessageType) {
+  async sendMessage(
+    messageBody: MessageType,
+    sentTo: "dm" | "group" = "dm",
+    roomId?: string | string[]
+  ) {
     if (!messageBody.receiver || !messageBody.message)
       throw new Error("Message needs a receiver and message content");
 
     const conversation = await this.getConversation(
       messageBody.receiver as ObjectId,
-      messageBody.message
+      messageBody.message,
+      sentTo
     );
 
-    // find the socket id from receiverId from the userOnline list.
+    // find the socket id from receiverId from the userOnline lispt.
     const message: Partial<MessageType> = {
       sender: this.userId,
       receiver: messageBody.receiver,
@@ -120,7 +154,13 @@ export class SocketManager {
       }
 
       // sending message through socket
-      if (userSocket) this.io.to(userSocket).emit("user_message", savedMessage);
+      if (sentTo === "group" && roomId) {
+        this.io
+          .to(message.receiver as string)
+          .emit("user_message", savedMessage);
+      } else if (userSocket) {
+        this.io.to(userSocket).emit("user_message", savedMessage);
+      }
     } catch (error: any) {
       if (error) {
         console.log(error);
