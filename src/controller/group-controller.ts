@@ -157,7 +157,12 @@ export const manageMembers = function (actionType: "add" | "remove") {
     const groupId = req.params.id;
     const selfId = (req as CustomRequest).user.id;
 
-    const isGroupAdmin = await Group.findOne({ _id: groupId, admin: selfId });
+    const groupExist = await Group.findOne({ _id: groupId });
+
+    if (!groupExist)
+      return next(errorMessage(404, "No group found with provided id"));
+
+    const isGroupAdmin = String(groupExist.admin) === selfId;
 
     // only admin can remove a member from the group
     if (!isGroupAdmin)
