@@ -86,9 +86,22 @@ export const getGroup = catchAsync(async function (
         name: 1,
         description: 1,
         createdAt: 1,
+
+        "admin._id": 1,
         "admin.fullName": 1,
         "admin.profile": 1,
-        members: "$memberUsers",
+        // here we are looping over members
+        members: {
+          $map: {
+            input: "$memberUsers",
+            as: "member",
+            in: {
+              _id: "$$member._id",
+              fullName: "$$member.fullName",
+              profile: "$$member.profile",
+            },
+          },
+        },
       },
     },
   ]);
