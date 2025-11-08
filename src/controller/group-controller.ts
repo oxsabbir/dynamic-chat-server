@@ -38,31 +38,65 @@ export const getGroup = catchAsync(async function (
 ) {
   const groupId = req.params.id;
 
-  const group = await Group.findById(groupId).populate([
+  const groupData = await Group.aggregate([
+    // 1️⃣ Match the group by ID
     {
-      path: "admin",
-      select: "fullName profile",
+      $match: { _id: new mongoose.Types.ObjectId(groupId) },
+    },
+
+    {
+      $lookup: {
+        from: "users",
+        localField: "admin",
+        foreignField: "_id",
+        as: "admin",
+      },
+    },
+    { $unwind: "$admin" },
+
+    {
+      $lookup: {
+        from: "members",
+        localField: "_id",
+        foreignField: "group",
+        as: "members",
+      },
+    },
+
+    {
+      $lookup: {
+        from: "users",
+        localField: "members.user",
+        foreignField: "_id",
+        as: "memberUsers",
+      },
+    },
+
+    {
+      $unset: [
+        "memberUsers.password",
+        "memberUsers.resetToken",
+        "memberUsers.refreshToken",
+      ],
+    },
+
+    {
+      $project: {
+        _id: 1,
+        name: 1,
+        description: 1,
+        createdAt: 1,
+        "admin.fullName": 1,
+        "admin.profile": 1,
+        members: "$memberUsers",
+      },
     },
   ]);
-  const groupMembers = await Member.find({ group: group?._id })
-    .select("user -_id")
-    .populate({
-      path: "user",
-      select: "fullName profile",
-    });
-
-  const flattendMember = groupMembers.map((member) => ({
-    ...member.toObject().user,
-  }));
-
-  if (!group)
-    return next(errorMessage(404, "No group found using provided id"));
-
   res.status(200).json({
     status: "success",
     message: "Group retrived successfully",
     data: {
-      group: { ...group.toObject(), members: flattendMember },
+      group: groupData,
     },
   });
 });
