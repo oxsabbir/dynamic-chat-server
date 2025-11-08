@@ -4,8 +4,8 @@ import catchAsync from "../utils/catch-async";
 import Conversation from "../model/Conversation";
 import { CustomRequest } from "../types";
 import mongoose from "mongoose";
-import Group from "../model/Group";
 import Member from "../model/Member";
+import { errorMessage } from "../utils/send-response";
 
 export const getInbox = catchAsync(async function (
   req: Request,
@@ -40,6 +40,35 @@ export const getInbox = catchAsync(async function (
     message: "Inbox retrieved sucessfully",
     data: {
       conversation,
+    },
+  });
+});
+
+export const getMessages = catchAsync(async function (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  // get the conversation id to get specifiec message for each conversation
+
+  const selfId = (req as CustomRequest).user.id;
+
+  const conversationId = req.params.id;
+
+  const messages = await Message.find({
+    conversation: conversationId,
+  }).populate({
+    path: "sender",
+    select: "fullName profile",
+  });
+
+  if (!messages) return next(errorMessage(405, "Failed to get message"));
+
+  res.status(200).json({
+    status: "success",
+    message: "Inbox retrieved sucessfully",
+    data: {
+      messages: messages,
     },
   });
 });
