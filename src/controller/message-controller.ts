@@ -32,6 +32,71 @@ export const getInbox = catchAsync(async function (
         ],
       },
     },
+    {
+      $addFields: {
+        conversation: {
+          $cond: {
+            if: { $eq: ["$isGroup", true] },
+            then: "$group",
+            else: {
+              $first: {
+                $setDifference: ["$participant", [selfObjectId]],
+              },
+            },
+          },
+        },
+      },
+    },
+
+    {
+      $lookup: {
+        from: "users",
+        localField: "conversation",
+        foreignField: "_id",
+        as: "userInfo",
+      },
+    },
+    {
+      $lookup: {
+        from: "groups",
+        localField: "conversation",
+        foreignField: "_id",
+        as: "groupInfo",
+      },
+    },
+
+    {
+      $unset: [
+        "userInfo.password",
+        "userInfo.passwordChangedAt",
+        "userInfo.resetToken",
+        "userInfo.accessToken",
+        "userInfo.refreshToken",
+        "userInfo.__v",
+      ],
+    },
+
+    {
+      $addFields: {
+        conversationInfo: {
+          $cond: {
+            if: { $eq: ["$isGroup", true] },
+            then: { $first: "$groupInfo" },
+            else: { $first: "$userInfo" },
+          },
+        },
+      },
+    },
+    {
+      $project: {
+        conversationInfo: 1,
+        isGroup: 1,
+        lastMessage: 1,
+        lastMessageTime: 1,
+        createdAt: 1,
+      },
+    },
+
     { $sort: { lastMessageTime: -1 } },
   ]);
 
@@ -50,17 +115,16 @@ export const getMessages = catchAsync(async function (
   next: NextFunction
 ) {
   // get the conversation id to get specifiec message for each conversation
-
-  const selfId = (req as CustomRequest).user.id;
-
   const conversationId = req.params.id;
 
   const messages = await Message.find({
     conversation: conversationId,
-  }).populate({
-    path: "sender",
-    select: "fullName profile",
-  });
+  })
+    .populate({
+      path: "sender",
+      select: "fullName profile",
+    })
+    .sort({ createdAt: -1 });
 
   if (!messages) return next(errorMessage(405, "Failed to get message"));
 

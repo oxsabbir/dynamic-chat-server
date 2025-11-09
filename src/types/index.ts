@@ -24,7 +24,7 @@ export interface Conversation extends Document {
   lastMessageTime: Date;
   isGroup: boolean;
   group: ObjectId;
-  isRead: boolean;
+  hasChecked: boolean;
   createdAt: Date;
 }
 

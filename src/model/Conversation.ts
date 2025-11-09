@@ -22,7 +22,8 @@ const conversationSchema = new Schema<Conversation>({
     type: Date,
     default: Date.now(),
   },
-  isRead: {
+
+  hasChecked: {
     type: Boolean,
     default: false,
   },
